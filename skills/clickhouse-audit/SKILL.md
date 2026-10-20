@@ -205,7 +205,7 @@ Structure, in this order:
 2. At a glance: measured numbers.
 3. Scorecard: five areas with status.
 4. Category detail, one block per area: what we found, issues, recommendations, impact if improved.
-5. Cost, rewrites, gaps, next step.
+5. Cost impact (derived), rewrites, gaps, next step.
 
 - Summary: three sentences maximum. Sentence one states the largest problem with its measured size. Sentence two names the cause. Sentence three names the first action. No greeting, no "this report", no adjectives like healthy, robust, powerful, or real opportunity.
 - Category detail: `summary` explains the status in one sentence. Issues are one bullet per finding: title, object, and one measured number. Recommendations are one high-level line per finding, no DDL, no steps, no full solution. Impact is one line. A green area says what was checked, "No issues found", "No action required", and either the savings or none.

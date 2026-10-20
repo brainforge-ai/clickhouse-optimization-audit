@@ -22,12 +22,12 @@
 
 - No row data is read, so `LowCardinality` and `Enum` candidates are name/size heuristics with medium confidence. The fix template tells the user to verify cardinality.
 - Saved queries are not available in system tables. The report lists this as a gap.
-- Host, CPU and disk metrics are unavailable through the remote MCP. Infrastructure findings use parts, merges, cache counters and service metadata.
+- Host and CPU metrics are unavailable through the remote MCP. Disk headroom comes from `system.disks` when the MCP exposes it, otherwise it is recorded as a gap. Service health also uses cache counters, errors, replication and service metadata.
 - `EXPLAIN` may be rejected by the MCP. The audit falls back to `read_rows / result_rows` and lowers confidence.
 
 ## Open items
 
-- Test live mode against a real ClickHouse Cloud service with MCP enabled.
+- Test live mode against a real ClickHouse Cloud service with MCP enabled, including the v2 five-area taxonomy and the migration path for v1 findings files.
 - Create the public GitHub repository `brainforge-ai/clickhouse-optimization-audit` and push.
 - Submit to Anthropic's directory (`claude.ai/directory/manage`) and record the listing URL.
 - Confirm the default CTA page (`https://www.brainforge.ai/free-consultation-call`) with marketing.
