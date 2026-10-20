@@ -26,9 +26,9 @@
     "audit_queries": 36
   },
   "scores": {
-    "infrastructure": "Amber",
+    "infrastructure": "Yellow",
     "schema": "Red",
-    "architecture": "Amber",
+    "architecture": "Yellow",
     "queries": "Red",
     "cost": "Red"
   },

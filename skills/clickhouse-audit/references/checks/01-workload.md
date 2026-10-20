@@ -1,6 +1,6 @@
 # Workload profile (pass 2)
 
-Default window: 7 days. Replace `7` with `1` or `30` when the user chooses another window. Always read through `clusterAllReplicas('default', system.query_log)` when the cluster exists.
+Default window: 7 days. Replace `7` with the user's choice (`1`, `30`, or a custom number of days). For full history, drop the time predicate or start from the oldest retained `event_time`, and state the actual range in the report. Always read through `clusterAllReplicas('default', system.query_log)` when the cluster exists.
 
 Every query excludes the audit's own statements with `query NOT LIKE '%bf_audit%'`.
 

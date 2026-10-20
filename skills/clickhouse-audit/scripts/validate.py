@@ -13,7 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 errors: list[str] = []
 warnings: list[str] = []
 
@@ -66,7 +66,8 @@ if "clickhouse" in servers:
     check(server.get("type") == "http", "ClickHouse MCP server type must be http")
     check(str(server.get("url", "")).startswith("https://"), "ClickHouse MCP server url must be https")
 
-skill = ROOT / "skills" / "clickhouse-audit" / "SKILL.md"
+SKILL = ROOT / "skills" / "clickhouse-audit"
+skill = SKILL / "SKILL.md"
 check(skill.exists(), "skills/clickhouse-audit/SKILL.md is required")
 if skill.exists():
     text = skill.read_text(encoding="utf-8")
@@ -77,11 +78,11 @@ if skill.exists():
 
 check((ROOT / "commands" / "audit.md").exists(), "commands/audit.md is required")
 
-html = (ROOT / "references" / "report-template.html").read_text(encoding="utf-8")
+html = (SKILL / "references" / "report-template.html").read_text(encoding="utf-8")
 check(html.count("__FINDINGS_JSON__") == 1, "HTML template needs exactly one __FINDINGS_JSON__ placeholder")
 check("application/json" in html, "HTML template must embed findings as application/json")
 
-checks_dir = ROOT / "references" / "checks"
+checks_dir = SKILL / "references" / "checks"
 check(len(list(checks_dir.glob("*.md"))) >= 20, "expected at least 20 check files")
 for path in checks_dir.glob("*.md"):
     body = path.read_text(encoding="utf-8")
@@ -92,21 +93,21 @@ for path in checks_dir.glob("*.md"):
     check("## Fix" in body, f"{path.name} is missing a Fix section")
     check("## Effort" in body, f"{path.name} is missing an Effort section")
 
-vendor = ROOT / "references" / "vendor" / "clickhouse"
+vendor = SKILL / "references" / "vendor" / "clickhouse"
 for required in ("LICENSE", "NOTICE", "VENDORED.md", "clickhouse-best-practices", "clickhouse-architecture-advisor"):
     check((vendor / required).exists(), f"vendored ClickHouse content missing: {required}")
 if (vendor / "VENDORED.md").exists():
     vendored = (vendor / "VENDORED.md").read_text(encoding="utf-8")
     check(bool(re.search(r"\*\*Commit:\*\* `[0-9a-f]{40}`", vendored)), "VENDORED.md must pin a 40-character commit SHA")
 
-pricing = list((ROOT / "references" / "pricing").glob("clickhouse-cloud-*.md"))
+pricing = list((SKILL / "references" / "pricing").glob("clickhouse-cloud-*.md"))
 check(bool(pricing), "a dated pricing file is required")
 if pricing:
     check("clickhouse.com/pricing" in pricing[0].read_text(encoding="utf-8"), "pricing file must cite its source")
 
 if example:
     result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "render_report.py"), "--findings", str(ROOT / "examples" / "findings.example.json"), "--check"],
+        [sys.executable, str(SKILL / "scripts" / "render_report.py"), "--findings", str(ROOT / "examples" / "findings.example.json"), "--check"],
         capture_output=True,
         text=True,
     )
@@ -118,7 +119,7 @@ if example:
         md_out = Path(tmp) / "report.md"
         result = subprocess.run(
             [
-                sys.executable, str(ROOT / "scripts" / "render_report.py"),
+                sys.executable, str(SKILL / "scripts" / "render_report.py"),
                 "--findings", str(ROOT / "examples" / "findings.example.json"),
                 "--out", str(html_out), "--md-out", str(md_out),
             ],

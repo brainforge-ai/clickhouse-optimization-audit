@@ -6,7 +6,7 @@ No backend. No hosting. No telemetry. Everything runs inside Claude through Clic
 
 ## What you get
 
-- **Scorecard** — Red / Amber / Green for infrastructure, schema, architecture, queries and cost efficiency.
+- **Scorecard** — Red / Yellow / Green for infrastructure, schema, architecture, queries and cost efficiency.
 - **Ranked findings** — every one cites measured evidence and a ClickHouse best-practice rule ID.
 - **Top 3 rewrites** — concrete DDL or SQL, why it helps, and a before/after measurement query.
 - **Pre-computation opportunities** — materialized views, projections and summary tables, with the exact patterns they replace.
@@ -69,7 +69,7 @@ On Claude Code and Cowork the server starts with the plugin. On claude.ai chat i
 
 Or ask: “Audit my ClickHouse service.”
 
-Optional arguments: a service name and a window (`1d`, `7d`, `30d`). Default window: 7 days. If the organization or service is ambiguous, the plugin asks. It never guesses.
+Optional arguments: a service name and a window (`1d`, `7d`, `30d`, a custom number of days, or `all` for the full retained history). Default window: 7 days. If the service retains less than the requested window, the audit uses what is available and states the actual range. If the organization or service is ambiguous, the plugin asks. It never guesses.
 
 Before querying, the plugin states the window, the approximate query count (around 40), and that an idle service will wake and incur compute. It asks for one confirmation.
 
@@ -84,7 +84,7 @@ Before querying, the plugin states the window, the approximate query count (arou
 | **Pre-computation** | Repeated heavy aggregations; unused materialized views; nested view chains; projection candidates |
 | **Cost** | Storage and compute drivers tied to the findings that would reduce them |
 
-The reasoning is grounded in ClickHouse's own guidance. The plugin vendors `clickhouse-best-practices` and `clickhouse-architecture-advisor` from [ClickHouse/agent-skills](https://github.com/ClickHouse/agent-skills) (Apache-2.0) at a pinned commit. See `references/vendor/clickhouse/VENDORED.md`.
+The reasoning is grounded in ClickHouse's own guidance. The plugin vendors `clickhouse-best-practices` and `clickhouse-architecture-advisor` from [ClickHouse/agent-skills](https://github.com/ClickHouse/agent-skills) (Apache-2.0) at a pinned commit. See `skills/clickhouse-audit/references/vendor/clickhouse/VENDORED.md`.
 
 ## Read-only guarantee
 
@@ -155,12 +155,12 @@ The HTML is one self-contained file: offline, light and dark themes, collapsible
 claude plugin validate --strict .
 
 # Validate the sample findings and render the HTML
-python3 scripts/render_report.py --findings examples/findings.example.json --check
-python3 scripts/render_report.py --findings examples/findings.example.json \
+python3 skills/clickhouse-audit/scripts/render_report.py --findings examples/findings.example.json --check
+python3 skills/clickhouse-audit/scripts/render_report.py --findings examples/findings.example.json \
   --out examples/output/report.html --md-out examples/output/report.md
 
 # Refresh the vendored ClickHouse skills
-./scripts/update-vendor.sh <commit-sha>
+./skills/clickhouse-audit/scripts/update-vendor.sh <commit-sha>
 ```
 
 Layout:
@@ -169,13 +169,13 @@ Layout:
 .claude-plugin/plugin.json      manifest
 .claude-plugin/marketplace.json marketplace catalog
 .mcp.json                       ClickHouse Cloud remote MCP
-skills/clickhouse-audit/        the only active skill
+skills/clickhouse-audit/        the only active skill (references + scripts ship inside it)
 commands/audit.md               thin entry point
-references/checks/              evidence SQL, thresholds, rule IDs
-references/vendor/clickhouse/   pinned Apache-2.0 rules
-scripts/render_report.py        findings.json → self-contained HTML
+skills/clickhouse-audit/references/checks/   evidence SQL, thresholds, rule IDs
+skills/clickhouse-audit/references/vendor/   pinned Apache-2.0 rules
+skills/clickhouse-audit/scripts/render_report.py   findings.json → self-contained HTML
 ```
 
 ## License and attribution
 
-Apache-2.0. The vendored ClickHouse agent skills are Apache-2.0, Copyright ClickHouse, Inc. See `LICENSE`, `NOTICE`, and `references/vendor/clickhouse/`.
+Apache-2.0. The vendored ClickHouse agent skills are Apache-2.0, Copyright ClickHouse, Inc. See `LICENSE`, `NOTICE`, and `skills/clickhouse-audit/references/vendor/clickhouse/`.

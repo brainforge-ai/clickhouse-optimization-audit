@@ -1,7 +1,7 @@
 # ClickHouse Optimization Audit — {{scope.service}}
 
 **Generated:** {{generated_at}}  
-**Window:** {{scope.window_days}} days ({{scope.window_start}} → {{scope.window_end}})  
+**Window:** {{scope.window}} ({{scope.window_start}} → {{scope.window_end}})  
 **Service:** {{scope.service}} · **Tier:** {{scope.tier}} · **Provider/Region:** {{scope.provider}} / {{scope.region}}  
 **Tables audited:** {{scope.tables_audited}} · **Audit queries:** {{scope.audit_queries}}
 

@@ -13,7 +13,7 @@ Sum the weights of all findings in an area.
 | Area total | Score |
 | --- | --- |
 | Any CRITICAL finding, or total ≥ 6 | Red |
-| 2–5 | Amber |
+| 2–5 | Yellow |
 | 0–1 | Green |
 
 Areas: `infrastructure`, `schema`, `architecture`, `queries`, `cost`.
@@ -25,7 +25,7 @@ Cost scoring is derived from the cost drivers, not from a separate findings list
 | Potential reduction | Score |
 | --- | --- |
 | Storage > 20% or read volume > 30% | Red |
-| Storage 10–20% or read volume 15–30% | Amber |
+| Storage 10–20% or read volume 15–30% | Yellow |
 | Below those | Green |
 
 Do not double-count a finding. A pruning problem is one finding in `queries`; its cost effect appears in the Cost Drivers table, not as a second finding.
@@ -61,7 +61,7 @@ Take the top 3 findings by rank that have a safe rewrite. A finding without a sa
 
 ## `findings.json` schema
 
-Write exactly this shape. The HTML renderer reads it directly.
+Write exactly this shape. The HTML renderer reads it directly. `scope.window_days` is a number of days, or `null` for the full history the service retains.
 
 ```json
 {
@@ -83,9 +83,9 @@ Write exactly this shape. The HTML renderer reads it directly.
     "audit_queries": 38
   },
   "scores": {
-    "infrastructure": "Amber",
+    "infrastructure": "Yellow",
     "schema": "Red",
-    "architecture": "Amber",
+    "architecture": "Yellow",
     "queries": "Red",
     "cost": "Red"
   },

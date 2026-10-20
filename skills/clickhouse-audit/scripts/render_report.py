@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 PLACEHOLDER = "__FINDINGS_JSON__"
-SCORES = {"Red", "Amber", "Green"}
+SCORES = {"Red", "Yellow", "Green"}
 AREAS = ("infrastructure", "schema", "architecture", "queries", "cost")
 SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM"}
 FINDING_AREAS = {"infrastructure", "schema", "architecture", "queries", "cost"}
@@ -57,9 +57,15 @@ def validate(data: dict) -> list[str]:
     if not isinstance(scope, dict):
         problems.append("scope must be an object")
     else:
-        for key in ("service", "window_days"):
+        for key in ("service",):
             if scope.get(key) in (None, ""):
                 problems.append(f"scope.{key} is required")
+        days = scope.get("window_days", "__missing__")
+        if days == "__missing__":
+            problems.append("scope.window_days is required (a number of days, or null for full available history)")
+        elif days not in (None, ""):
+            if not isinstance(days, int) or days < 1:
+                problems.append("scope.window_days must be a positive integer, or null for full available history")
 
     scores = data.get("scores")
     if not isinstance(scores, dict):
@@ -156,6 +162,13 @@ def _list(value) -> str:
     return "" if value is None else str(value)
 
 
+def _window_label(scope: dict) -> str:
+    days = scope.get("window_days")
+    if days in (None, ""):
+        return "All available history"
+    return f"{days} days"
+
+
 def _num(value, digits: int = 0) -> str:
     if value is None or value == "":
         return "—"
@@ -182,7 +195,7 @@ def render_markdown(data: dict) -> str:
     lines.append(f"# ClickHouse Optimization Audit — {service}")
     lines.append("")
     lines.append(f"**Generated:** {generated}  ")
-    lines.append(f"**Window:** {scope.get('window_days', '')} days ({scope.get('window_start', '')} → {scope.get('window_end', '')})  ")
+    lines.append(f"**Window:** {_window_label(scope)} ({scope.get('window_start', '')} → {scope.get('window_end', '')})  ")
     lines.append(f"**Service:** {service} · **Tier:** {scope.get('tier', '—')} · **Provider/Region:** {scope.get('provider', '—')} / {scope.get('region', '—')}  ")
     lines.append(f"**Tables audited:** {scope.get('tables_audited', '—')} · **Audit queries:** {scope.get('audit_queries', '—')}")
     lines.append("")

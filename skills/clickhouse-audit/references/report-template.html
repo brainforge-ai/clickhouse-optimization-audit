@@ -15,7 +15,7 @@
     --forest: #244926;
     --accent: #3FA93A;
     --red: #B3261E;
-    --amber: #A86400;
+    --yellow: #A86400;
     --green: #2E7D32;
     --info: #3B6EA5;
     --code-bg: #F3F6EF;
@@ -30,7 +30,7 @@
       --card: #0B1F0D;
       --accent: #6FD46A;
       --red: #FF8A80;
-      --amber: #FFC46B;
+      --yellow: #FFC46B;
       --green: #7BD88F;
       --info: #7FB2E5;
       --code-bg: #102413;
@@ -54,17 +54,27 @@
     border-bottom: 4px solid #3FA93A;
   }
   .hero-inner { max-width: 1080px; margin: 0 auto; }
-  .brand {
-    font-size: 12px;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: #9CC79A;
-    margin-bottom: 18px;
+  .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+  .lockup { display: flex; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: #9CC79A; }
+  .lockup .mark { width: 14px; height: 14px; border-radius: 3px; background: #3FA93A; flex: none; }
+  .lockup .wordmark { font-family: Georgia, "Times New Roman", serif; font-size: 17px; letter-spacing: .02em; text-transform: none; color: #FCFCFA; }
+  .lockup .divider { width: 1px; height: 16px; background: #2C4A2E; }
+  .lockup .product { color: #9CC79A; }
+  .hero-cta {
+    display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px;
+    border-radius: 8px; background: #3FA93A; color: #08140A; font-weight: 600; font-size: 14px;
+    text-decoration: none; white-space: nowrap;
   }
+  .hero-cta:hover { background: #4CB946; }
   .hero h1 { margin: 0 0 8px; font-size: clamp(28px, 5vw, 44px); line-height: 1.1; font-weight: 600; }
   .hero p { margin: 0; color: #C9D8C9; max-width: 70ch; }
   .meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-size: 13px; color: #C9D8C9; }
   .meta b { color: #FCFCFA; font-weight: 500; }
+  .meta span { padding: 4px 10px; border: 1px solid #2C4A2E; border-radius: 999px; background: rgba(255,255,255,.03); }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .kpi .k { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .kpi .v { font-size: 24px; font-weight: 600; margin-top: 4px; }
   main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
   section { margin: 0 0 40px; }
   h2 {
@@ -90,10 +100,10 @@
   .score .value { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 600; }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
   .red .dot { background: var(--red); }
-  .amber .dot { background: var(--amber); }
+  .yellow .dot { background: var(--yellow); }
   .green .dot { background: var(--green); }
   .red .value { color: var(--red); }
-  .amber .value { color: var(--amber); }
+  .yellow .value { color: var(--yellow); }
   .green .value { color: var(--green); }
   .score .weight { font-size: 12px; color: var(--muted); margin-top: 6px; }
   .finding {
@@ -105,7 +115,7 @@
     box-shadow: var(--shadow);
   }
   .finding.sev-critical { border-left-color: var(--red); }
-  .finding.sev-high { border-left-color: var(--amber); }
+  .finding.sev-high { border-left-color: var(--yellow); }
   .finding.sev-medium { border-left-color: var(--info); }
   .finding > summary {
     cursor: pointer;
@@ -129,7 +139,7 @@
     white-space: nowrap;
   }
   .sev-critical .badge { color: var(--red); }
-  .sev-high .badge { color: var(--amber); }
+  .sev-high .badge { color: var(--yellow); }
   .sev-medium .badge { color: var(--info); }
   .finding-title { font-weight: 600; display: block; }
   .finding-object { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
@@ -219,7 +229,15 @@
 <body>
 <header class="hero">
   <div class="hero-inner">
-    <div class="brand">Brainforge · ClickHouse Optimization Audit</div>
+    <div class="hero-top">
+      <div class="lockup">
+        <span class="mark" aria-hidden="true"></span>
+        <span class="wordmark">Brainforge</span>
+        <span class="divider" aria-hidden="true"></span>
+        <span class="product">ClickHouse Optimization Audit</span>
+      </div>
+      <a class="hero-cta" id="hero-cta" href="https://www.brainforge.ai/free-consultation-call">Book a call</a>
+    </div>
     <h1 id="title">ClickHouse Optimization Audit</h1>
     <p id="subtitle"></p>
     <div class="meta" id="meta"></div>
@@ -229,6 +247,10 @@
   <section>
     <h2>Executive summary</h2>
     <p class="lead" id="summary"></p>
+  </section>
+  <section id="kpi-section">
+    <h2>At a glance</h2>
+    <div class="grid kpis" id="kpis"></div>
   </section>
   <section>
     <h2>Scorecard</h2>
@@ -263,7 +285,8 @@
   <section class="cta" id="cta-section">
     <h2>Next step</h2>
     <p id="cta-text"></p>
-    <a id="cta-link" href="#">Book the assessment</a>
+    <a id="cta-link" href="https://www.brainforge.ai/free-consultation-call">Book the assessment</a>
+    <span class="url" id="cta-url"></span>
   </section>
 </main>
 <footer id="footer"></footer>
@@ -321,7 +344,7 @@
     ["Service", scope.service],
     ["Tier", scope.tier],
     ["Provider / region", [scope.provider, scope.region].filter(Boolean).join(" / ")],
-    ["Window", scope.window_days ? scope.window_days + " days" : ""],
+    ["Window", scope.window_days ? scope.window_days + " days" : (scope.window_days === null ? "All available history" : "")],
     ["Tables", scope.tables_audited],
     ["Queries", scope.audit_queries]
   ];
@@ -446,8 +469,21 @@
   }).join("") : "<li>No gaps. All checks ran with the permissions available.</li>";
 
   var cta = data.cta || {};
+  var ctaUrl = cta.url || "https://www.brainforge.ai/free-consultation-call";
   $("cta-text").textContent = cta.text || "Want the full assessment? Brainforge can turn this audit into a scoped optimization plan.";
-  if (cta.url) { $("cta-link").href = cta.url; }
+  $("cta-link").href = ctaUrl;
+  $("cta-url").textContent = ctaUrl;
+  $("hero-cta").href = ctaUrl;
+
+  var kpi = [];
+  if (measured.storage_tb != null) kpi.push(["Storage", num(measured.storage_tb, 2) + " TB", "compressed"]);
+  if (measured.read_tb_per_day != null) kpi.push(["Read volume", num(measured.read_tb_per_day, 2) + " TB/day", "user queries"]);
+  if (measured.parts_per_day != null) kpi.push(["Parts created", num(measured.parts_per_day) + "/day", "all tables"]);
+  if (measured.cache_hit_pct != null) kpi.push(["Cache hit", num(measured.cache_hit_pct, 1) + "%", "target " + num(measured.cache_target_pct, 1) + "%"]);
+  kpi.push(["Findings", String((data.findings || []).length), (data.findings || []).filter(function (f) { return f.severity === "CRITICAL"; }).length + " critical"]);
+  $("kpis").innerHTML = kpi.map(function (x) {
+    return '<div class="kpi"><div class="k">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div><div class="note">' + esc(x[2]) + "</div></div>";
+  }).join("");
 
   $("footer").textContent = "Generated " + (data.generated_at || "") +
     ". Read-only audit. No data was modified. Query literals were redacted. Findings cite ClickHouse best-practice rules vendored under Apache-2.0.";

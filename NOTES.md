@@ -16,7 +16,7 @@
 2. **Check files are grouped by concern, not one file per rule ID.** There are 25 files, each listing the rule IDs it implements. This avoids 31 near-duplicate files while preserving rule-level traceability in every finding. The plan's requirement — rule ID on every finding — is met.
 3. **No subagents in v1.** The plan lists per-area subagents as a v2 option. Kept out to reduce setup complexity.
 4. **Pricing coverage.** The public page publishes Enterprise rates by region, and Basic/Scale examples only for AWS us-east-1. The pinned file includes derived Basic/Scale us-east-1 rates and instructs the audit to ask or use a conservative upper bound elsewhere.
-5. **No dollar figure without a shape change.** The plan's rule is enforced in `scripts/render_report.py` validation, not just in prose.
+5. **No dollar figure without a shape change.** The plan's rule is enforced in `skills/clickhouse-audit/scripts/render_report.py` validation, not just in prose.
 
 ## Deliberate limits
 

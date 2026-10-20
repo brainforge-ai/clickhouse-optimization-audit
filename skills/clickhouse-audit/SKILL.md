@@ -12,6 +12,15 @@ Run a read-only, evidence-backed audit of one ClickHouse Cloud service. Produce:
 
 The audit reads metadata and system tables only. It never reads row data from user tables, never writes, and never executes DDL.
 
+## Runtime paths (resolve once)
+
+`ROOT` is the folder that contains this `SKILL.md`:
+
+- Plugin install: `${CLAUDE_PLUGIN_ROOT}/skills/clickhouse-audit`
+- Bare skill install: the folder holding `SKILL.md`
+
+All paths below are relative to `ROOT`. If a referenced file is missing, stop and name it. Do not substitute your own template or schema.
+
 ## Hard rules
 
 Read these before the first tool call. They are not negotiable.
@@ -26,6 +35,8 @@ Read these before the first tool call. They are not negotiable.
 - **Redact literals** (strings, numbers, emails, IDs) from every query shown in a report. Replace with `?`.
 - **No evidence, no finding.** Every finding must cite a query result.
 - **State gaps.** Missing permissions, short retention, disabled logs, and unavailable metrics are listed, never silently skipped.
+- **One report design.** The HTML report is produced only by rendering `findings.json` through the bundled template. Never hand-write HTML, restyle the report, or invent a second JSON shape. If the renderer fails, stop and report the error.
+- **Plain engineering prose.** The report reads like an engineer wrote it for another engineer. No marketing language, no filler, no restating the same number in three places.
 
 ## Prerequisites to explain to the user
 
@@ -62,7 +73,8 @@ Keep `organizationId` and `serviceId` for the rest of the run. Pass `serviceId` 
 
 Before the first query, tell the user:
 - Service name and tier.
-- Window: 7 days by default. Offer 1 or 30.
+- Window: 7 days by default. Offer 1, 7, 30, a custom number of days, or full history (everything the service retains).
+- If the service retains less than the requested window, use the shorter available range and state the actual start and end in the report.
 - Roughly 40 queries, mostly against `system.query_log`, `system.parts`, `system.tables` and `system.columns`.
 - "If the service is idle, this will wake it and incur compute."
 - Access limits: the audit can only see what the signed-in role can read.
@@ -71,7 +83,7 @@ Ask **once**: "Proceed?" Do not ask again during the run.
 
 ### Step 4 — Inventory (pass 1)
 
-Follow `${CLAUDE_PLUGIN_ROOT}/references/checks/00-inventory.md`. Collect:
+Follow `$ROOT/references/checks/00-inventory.md`. Collect:
 - Version, timezone, cluster name.
 - Databases and tables (metadata).
 - Engines, sorting/primary/partition keys, TTL presence, views and MVs.
@@ -83,7 +95,7 @@ Resolve the log source once: `system.clusters` tells you whether `clusterAllRepl
 
 ### Step 5 — Workload profile (pass 2)
 
-Follow `${CLAUDE_PLUGIN_ROOT}/references/checks/01-workload.md`. For the chosen window:
+Follow `$ROOT/references/checks/01-workload.md`. For the chosen window:
 - Top query patterns by read bytes, duration and memory.
 - Hot tables and tables with no reads.
 - Insert cadence and average batch size.
@@ -95,7 +107,7 @@ Exclude the audit's own queries with `query NOT LIKE '%bf_audit%'`.
 
 ### Step 6 — Deep dive (pass 3)
 
-Follow `${CLAUDE_PLUGIN_ROOT}/references/checks/02-deep-dive.md`. Take the top 3 patterns and run `EXPLAIN indexes = 1` on each. Record Parts and Granules read vs total. If `EXPLAIN` is rejected by the MCP, mark it as a gap and fall back to the pruning proxy.
+Follow `$ROOT/references/checks/02-deep-dive.md`. Take the top 3 patterns and run `EXPLAIN indexes = 1` on each. Record Parts and Granules read vs total. If `EXPLAIN` is rejected by the MCP, mark it as a gap and fall back to the pruning proxy.
 
 ### Step 7 — Analyze
 
@@ -105,28 +117,28 @@ Areas and files:
 
 | Area | Files |
 | --- | --- |
-| Infrastructure | `${CLAUDE_PLUGIN_ROOT}/references/checks/infra-parts.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/infra-merges.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/infra-compression.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/infra-cache.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/infra-service-shape.md` |
-| Schema | `${CLAUDE_PLUGIN_ROOT}/references/checks/schema-order-by.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/schema-types.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/schema-partitioning.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/schema-json.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/schema-codecs.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/schema-skip-indexes.md` |
-| Architecture | `${CLAUDE_PLUGIN_ROOT}/references/checks/architecture-ingestion.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/architecture-engines.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/architecture-joins.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/architecture-workloads.md` |
-| Queries | `${CLAUDE_PLUGIN_ROOT}/references/checks/query-pruning.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/query-patterns.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/query-joins.md` |
-| Pre-computation | `${CLAUDE_PLUGIN_ROOT}/references/checks/precomputation-mv.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/precomputation-projections.md` |
-| Cost | `${CLAUDE_PLUGIN_ROOT}/references/checks/cost-storage.md`, `${CLAUDE_PLUGIN_ROOT}/references/checks/cost-compute.md` |
+| Infrastructure | `$ROOT/references/checks/infra-parts.md`, `$ROOT/references/checks/infra-merges.md`, `$ROOT/references/checks/infra-compression.md`, `$ROOT/references/checks/infra-cache.md`, `$ROOT/references/checks/infra-service-shape.md` |
+| Schema | `$ROOT/references/checks/schema-order-by.md`, `$ROOT/references/checks/schema-types.md`, `$ROOT/references/checks/schema-partitioning.md`, `$ROOT/references/checks/schema-json.md`, `$ROOT/references/checks/schema-codecs.md`, `$ROOT/references/checks/schema-skip-indexes.md` |
+| Architecture | `$ROOT/references/checks/architecture-ingestion.md`, `$ROOT/references/checks/architecture-engines.md`, `$ROOT/references/checks/architecture-joins.md`, `$ROOT/references/checks/architecture-workloads.md` |
+| Queries | `$ROOT/references/checks/query-pruning.md`, `$ROOT/references/checks/query-patterns.md`, `$ROOT/references/checks/query-joins.md` |
+| Pre-computation | `$ROOT/references/checks/precomputation-mv.md`, `$ROOT/references/checks/precomputation-projections.md` |
+| Cost | `$ROOT/references/checks/cost-storage.md`, `$ROOT/references/checks/cost-compute.md` |
 
-Cross-check reasoning against the vendored rules under `${CLAUDE_PLUGIN_ROOT}/references/vendor/clickhouse/`. Cite the rule ID, not the vendor file name.
+Cross-check reasoning against the vendored rules under `$ROOT/references/vendor/clickhouse/`. Cite the rule ID, not the vendor file name.
 
 ### Step 8 — Score and rank
 
-Use `${CLAUDE_PLUGIN_ROOT}/references/rubric.md`.
+Use `$ROOT/references/rubric.md`.
 
 - Weight: CRITICAL 3, HIGH 2, MEDIUM 1.
-- Per area: Red if any CRITICAL or total ≥ 6; Amber 2–5; Green 0–1.
+- Per area: Red if any CRITICAL or total ≥ 6; Yellow 2–5; Green 0–1.
 - Rank findings by `impact × confidence ÷ effort`.
-- The top 3 findings that have a safe rewrite get one from `${CLAUDE_PLUGIN_ROOT}/references/rewrites.md`, with a before/after measurement query. If a finding has no safe rewrite, skip it and take the next finding.
+- The top 3 findings that have a safe rewrite get one from `$ROOT/references/rewrites.md`, with a before/after measurement query. If a finding has no safe rewrite, skip it and take the next finding.
 - Label every rewrite "Review before applying". Never execute it.
 
 ### Step 9 — Cost
 
-Use `${CLAUDE_PLUGIN_ROOT}/references/cost-model.md` and `${CLAUDE_PLUGIN_ROOT}/references/pricing/`.
+Use `$ROOT/references/cost-model.md` and `$ROOT/references/pricing/`.
 
 Report measured units first (read volume, storage, parts/day, cache hit), then dollars. Claim compute dollars only when a fix names a service-shape change. Every dollar figure carries the pricing date and the not-a-quote footer.
 
@@ -134,27 +146,49 @@ If plan, provider, or region is missing from `get_service_details`, ask the user
 
 ### Step 10 — Write the outputs
 
-Build `findings.json` with the schema in `${CLAUDE_PLUGIN_ROOT}/references/rubric.md`. Then:
+Build `findings.json` with the schema in `$ROOT/references/rubric.md`. Then:
 
 1. Write `findings.json` to disk. Validate it:
    ```
-   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render_report.py" --findings clickhouse-audit-<service>-<date>.json --check
+   python3 "$ROOT/scripts/render_report.py" --findings clickhouse-audit-<service>-<date>.json --check
    ```
 2. Render both reports. If Bash is available:
    ```
-   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render_report.py" \
+   python3 "$ROOT/scripts/render_report.py" \
      --findings clickhouse-audit-<service>-<date>.json \
-     --template "${CLAUDE_PLUGIN_ROOT}/references/report-template.html" \
+     --template "$ROOT/references/report-template.html" \
      --out clickhouse-audit-<service>-<date>.html \
      --md-out clickhouse-audit-<service>-<date>.md
    ```
-   If Bash is not available, fill `${CLAUDE_PLUGIN_ROOT}/references/report-template.md` for the Markdown and embed the same JSON into a copy of the HTML template.
-3. Show the Markdown in the conversation.
-4. Use the current directory, or the directory the user asks for. Name the files with the service lowercased and non-alphanumerics replaced by `-`, and the date as `YYYY-MM-DD`.
+   If Bash is not available, fill `$ROOT/references/report-template.md` for the Markdown and embed the same JSON into a copy of the HTML template.
+3. Verify the rendered HTML before showing anything:
+   ```
+   grep -c 'id="findings-data"' clickhouse-audit-<service>-<date>.html
+   grep -c 'class="hero-cta"' clickhouse-audit-<service>-<date>.html
+   grep -c '3FA93A' clickhouse-audit-<service>-<date>.html
+   ```
+   All three must return at least 1. If any is missing, the wrong file was written. Re-render from the template; do not patch the HTML by hand.
+4. Show the Markdown in the conversation.
+5. Use the current directory, or the directory the user asks for. Name the files with the service lowercased and non-alphanumerics replaced by `-`, and the date as `YYYY-MM-DD`.
 
 Default CTA: "Want the full assessment? Brainforge can turn this audit into a scoped optimization plan with projected savings and a delivery sequence." with `https://www.brainforge.ai/free-consultation-call`.
 
 End the conversation with the executive summary, the scorecard, the top 3 findings, the cost opportunity, and the paths to the saved files.
+
+## Report writing
+
+The reader is a data engineer or platform owner. Every sentence carries a fact or an action.
+
+- Summary: three sentences maximum. Sentence one states the largest problem with its measured size. Sentence two names the cause. Sentence three names the first action. No greeting, no "this report", no adjectives like healthy, robust, powerful, or real opportunity.
+- Findings: object and number first. `learn.reviews holds 6.10 GB and had zero reads in 6.3 days.` Avoid "we observed that", "it appears that", "there may be".
+- Fixes: imperative, one action per sentence. `Drop the two duplicate tables.` Not "it would be advisable to consider".
+- Do not repeat a metric that already appears in At a glance, the scorecard, or Cost. Findings add evidence, not repetition.
+- Observations: at most seven bullets, one fact each, only when the fact is not already in a finding, the cost section, or the gaps list.
+- State uncertainty only in the gap or false-positive field, in one clause.
+- Active voice. No em dashes in prose; use commas or full stops.
+- No emoji, no exclamation marks, no "AI-powered", no "leverage".
+
+After writing `findings.json`, read the three output files back. If any sentence breaks these rules, rewrite the JSON field and re-render.
 
 ## Query templates
 
@@ -214,11 +248,11 @@ Output is labeled **Query-level review**. No scorecard, no service-wide cost, no
 
 ## Files
 
-- `${CLAUDE_PLUGIN_ROOT}/references/checks/` — evidence SQL, thresholds, rule IDs
-- `${CLAUDE_PLUGIN_ROOT}/references/rubric.md` — weights, scoring, ranking, `findings.json` schema
-- `${CLAUDE_PLUGIN_ROOT}/references/rewrites.md` — rewrite patterns
-- `${CLAUDE_PLUGIN_ROOT}/references/cost-model.md` — cost formulas and rules
-- `${CLAUDE_PLUGIN_ROOT}/references/report-template.md` — Markdown report
-- `${CLAUDE_PLUGIN_ROOT}/references/report-template.html` — self-contained HTML report
-- `${CLAUDE_PLUGIN_ROOT}/references/pricing/` — dated ClickHouse Cloud rates
-- `${CLAUDE_PLUGIN_ROOT}/references/vendor/clickhouse/` — pinned ClickHouse best-practice rules (Apache-2.0)
+- `$ROOT/references/checks/` — evidence SQL, thresholds, rule IDs
+- `$ROOT/references/rubric.md` — weights, scoring, ranking, `findings.json` schema
+- `$ROOT/references/rewrites.md` — rewrite patterns
+- `$ROOT/references/cost-model.md` — cost formulas and rules
+- `$ROOT/references/report-template.md` — Markdown report
+- `$ROOT/references/report-template.html` — self-contained HTML report
+- `$ROOT/references/pricing/` — dated ClickHouse Cloud rates
+- `$ROOT/references/vendor/clickhouse/` — pinned ClickHouse best-practice rules (Apache-2.0)
