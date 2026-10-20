@@ -1,7 +1,7 @@
-# schema-partitioning
+# model-partitioning
 
 **Rule IDs:** `schema-partition-low-cardinality`, `schema-partition-lifecycle`, `schema-partition-query-tradeoffs`, `schema-partition-start-without`
-**Area:** Schema
+**Area:** Data model & storage
 **Severity:** HIGH
 **Evidence:** Inventory queries 3 and 5 (`partition_key`, partition count, parts)
 

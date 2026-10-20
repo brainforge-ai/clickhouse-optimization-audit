@@ -1,7 +1,7 @@
-# cost-compute
+# service-compute
 
 **Rule IDs:** `cost:compute`, plus the query, schema, and architecture findings that cause it
-**Area:** Cost
+**Area:** Service health
 **Severity:** HIGH when read volume can drop by 30% or more
 **Evidence:** Workload queries 1, 6, 7, 8; `get_service_details`
 

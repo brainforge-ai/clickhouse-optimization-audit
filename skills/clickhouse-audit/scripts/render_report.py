@@ -15,9 +15,29 @@ from pathlib import Path
 
 PLACEHOLDER = "__FINDINGS_JSON__"
 SCORES = {"Red", "Yellow", "Green"}
-AREAS = ("infrastructure", "schema", "architecture", "queries", "cost")
+AREAS = ("service_health", "data_model", "ingestion", "query_efficiency", "data_lifecycle")
+AREA_LABELS = {
+    "service_health": "Service health",
+    "data_model": "Data model & storage",
+    "ingestion": "Ingestion & pipelines",
+    "query_efficiency": "Query efficiency",
+    "data_lifecycle": "Data lifecycle",
+}
+V1_AREA_MAP = {
+    "infrastructure": "Service health",
+    "schema": "Data model & storage",
+    "architecture": "Ingestion & pipelines",
+    "queries": "Query efficiency",
+    "cost": "Data lifecycle",
+}
+V1_SCORE_MAP = {
+    "infrastructure": "service_health",
+    "schema": "data_model",
+    "architecture": "ingestion",
+    "queries": "query_efficiency",
+}
 SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM"}
-FINDING_AREAS = {"infrastructure", "schema", "architecture", "queries", "cost"}
+FINDING_AREAS = set(AREA_LABELS.values())
 LEVELS = {"high", "medium", "low"}
 REQUIRED_FINDING = (
     "id", "rule_id", "area", "severity", "title", "object",
@@ -47,11 +67,46 @@ def load_json(path: Path) -> dict:
     return data
 
 
+def normalize(data: dict) -> dict:
+    """Migrate a schema_version 1.0 file to 2.0 in memory."""
+    if data.get("schema_version") != "1.0":
+        return data
+    data = json.loads(json.dumps(data))
+    data["schema_version"] = "2.0"
+    for finding in data.get("findings") or []:
+        area = str(finding.get("area", ""))
+        lowered = area.lower()
+        if lowered in V1_AREA_MAP:
+            finding["area"] = V1_AREA_MAP[lowered]
+
+    severity_weight = {"CRITICAL": 3, "HIGH": 2, "MEDIUM": 1}
+    weights = {area: 0 for area in AREAS}
+    critical = {area: False for area in AREAS}
+    label_to_key = {label.lower(): key for key, label in AREA_LABELS.items()}
+    for finding in data.get("findings") or []:
+        key = label_to_key.get(str(finding.get("area", "")).lower())
+        if not key:
+            continue
+        weights[key] += severity_weight.get(str(finding.get("severity", "")).upper(), 0)
+        if str(finding.get("severity", "")).upper() == "CRITICAL":
+            critical[key] = True
+    data["score_weights"] = weights
+    data["scores"] = {
+        area: ("Red" if critical[area] or weights[area] >= 6 else ("Yellow" if weights[area] >= 2 else "Green"))
+        for area in AREAS
+    }
+
+    old_areas = data.get("areas") if isinstance(data.get("areas"), dict) else {}
+    v1_area_keys = {"infrastructure": "service_health", "schema": "data_model", "architecture": "ingestion", "queries": "query_efficiency", "cost": "data_lifecycle"}
+    data["areas"] = {v1_area_keys[old]: value for old, value in old_areas.items() if old in v1_area_keys}
+    return data
+
+
 def validate(data: dict) -> list[str]:
     problems: list[str] = []
 
-    if data.get("schema_version") != "1.0":
-        problems.append('schema_version must be "1.0"')
+    if data.get("schema_version") != "2.0":
+        problems.append('schema_version must be "2.0" (1.0 files are migrated on read)')
 
     scope = data.get("scope")
     if not isinstance(scope, dict):
@@ -74,6 +129,8 @@ def validate(data: dict) -> list[str]:
         for area in AREAS:
             if scores.get(area) not in SCORES:
                 problems.append(f"scores.{area} must be one of {sorted(SCORES)}")
+        for extra in set(scores) - set(AREAS):
+            problems.append(f"scores.{extra} is not a scored area")
 
     areas = data.get("areas")
     if areas is not None:
@@ -126,8 +183,11 @@ def validate(data: dict) -> list[str]:
                     problems.append(f"findings[{index}].{key} is required")
             if finding.get("severity") not in SEVERITIES:
                 problems.append(f"findings[{index}].severity must be one of {sorted(SEVERITIES)}")
-            if str(finding.get("area", "")).lower() not in FINDING_AREAS:
+            area_value = str(finding.get("area", ""))
+            if area_value not in FINDING_AREAS and area_value.lower() not in FINDING_AREAS:
                 problems.append(f"findings[{index}].area must be one of {sorted(FINDING_AREAS)}")
+            if finding.get("risk") is not None and not isinstance(finding.get("risk"), bool):
+                problems.append(f"findings[{index}].risk must be a boolean")
             for key in ("impact", "effort", "confidence"):
                 if finding.get(key) not in LEVELS:
                     problems.append(f"findings[{index}].{key} must be one of {sorted(LEVELS)}")
@@ -167,8 +227,10 @@ def validate(data: dict) -> list[str]:
     severity_weight = {"CRITICAL": 3, "HIGH": 2, "MEDIUM": 1}
     area_findings = {area: [] for area in AREAS}
     seen_ids = set()
+    label_to_key = {label.lower(): key for key, label in AREA_LABELS.items()}
     for finding in findings:
-        area = str(finding.get("area", "")).lower()
+        area_value = str(finding.get("area", "")).lower()
+        area = label_to_key.get(area_value, area_value)
         if area in area_findings:
             area_findings[area].append(finding)
         finding_id = finding.get("id")
@@ -178,24 +240,14 @@ def validate(data: dict) -> list[str]:
 
     for area in AREAS:
         total = sum(severity_weight.get(str(f.get("severity", "")).upper(), 0) for f in area_findings[area])
-        if area != "cost" and isinstance(weights.get(area), int) and weights[area] != total:
+        if isinstance(weights.get(area), int) and weights[area] != total:
             problems.append(f"score_weights.{area} is {weights[area]} but its findings sum to {total}")
-        if area == "cost":
-            continue
         expected = "Red" if any(str(f.get("severity", "")).upper() == "CRITICAL" for f in area_findings[area]) or total >= 6 else ("Yellow" if total >= 2 else "Green")
         if scores.get(area) != expected:
             problems.append(f"scores.{area} is {scores.get(area)} but the rubric gives {expected} from weight {total}")
 
     cost = data.get("cost") if isinstance(data.get("cost"), dict) else {}
     measured = cost.get("measured") if isinstance(cost.get("measured"), dict) else {}
-    storage_pct = measured.get("storage_reduction_pct")
-    read_pct = measured.get("read_reduction_pct")
-    if isinstance(storage_pct, (int, float)) or isinstance(read_pct, (int, float)):
-        s_pct = storage_pct if isinstance(storage_pct, (int, float)) else 0
-        r_pct = read_pct if isinstance(read_pct, (int, float)) else 0
-        expected_cost = "Red" if (s_pct > 20 or r_pct > 30) else ("Yellow" if (10 <= s_pct <= 20 or 15 <= r_pct <= 30) else "Green")
-        if scores.get("cost") != expected_cost:
-            problems.append(f"scores.cost is {scores.get('cost')} but measured reductions give {expected_cost}")
 
     for label, before_key, after_key, pct_key in (
         ("storage", "storage_tb", "storage_tb_after", "storage_reduction_pct"),
@@ -233,6 +285,17 @@ def validate(data: dict) -> list[str]:
             if abs(calculated_rank - claimed_rank) > 0.01:
                 problems.append(f"finding {finding.get('id')}: rank_score is {claimed_rank} but impact x confidence / effort gives {round(calculated_rank, 2)}")
 
+    rule_areas = {
+        "schema-": "Data model & storage",
+        "query-": "Query efficiency",
+        "insert-": "Ingestion & pipelines",
+    }
+    for finding in findings:
+        rule_id = str(finding.get("rule_id", ""))
+        for prefix, label in rule_areas.items():
+            if rule_id.startswith(prefix) and finding.get("area") != label:
+                problems.append(f"finding {finding.get('id')}: rule {rule_id} belongs to {label}, but area is {finding.get('area')}")
+
     known_ids = {finding.get("id") for finding in findings}
     for index, rewrite in enumerate(data.get("rewrites") or []):
         finding_id = rewrite.get("finding_id") if isinstance(rewrite, dict) else None
@@ -251,8 +314,7 @@ def embed(data: dict) -> str:
     return payload
 
 
-def render(findings: Path, template: Path, out: Path) -> None:
-    data = load_json(findings)
+def render_data(data: dict, template: Path, out: Path) -> None:
     problems = validate(data)
     if problems:
         for problem in problems:
@@ -333,46 +395,23 @@ def render_markdown(data: dict) -> str:
     lines.append("")
     lines.append("| Area | Score | Weight |")
     lines.append("| --- | --- | --- |")
-    for key, label in (
-        ("infrastructure", "Infrastructure"),
-        ("schema", "Schema"),
-        ("architecture", "Architecture"),
-        ("queries", "Queries"),
-        ("cost", "Cost efficiency"),
-    ):
-        weight = "derived" if key == "cost" else weights.get(key, "—")
-        lines.append(f"| {label} | {scores.get(key, '—')} | {weight} |")
+    for key in AREAS:
+        lines.append(f"| {AREA_LABELS[key]} | {scores.get(key, '—')} | {weights.get(key, '—')} |")
     lines.append("")
 
     lines.append("## Category detail")
     lines.append("")
     findings = data.get("findings", [])
     areas = data.get("areas") if isinstance(data.get("areas"), dict) else {}
-    for key, label in (
-        ("infrastructure", "Infrastructure"),
-        ("schema", "Schema"),
-        ("architecture", "Architecture"),
-        ("queries", "Queries"),
-        ("cost", "Cost efficiency"),
-    ):
+    for key in AREAS:
+        label = AREA_LABELS[key]
         status = scores.get(key, "—")
-        area_findings = [f for f in findings if str(f.get("area", "")).lower() == key]
+        area_findings = [f for f in findings if str(f.get("area", "")) == label]
         note = areas.get(key) if isinstance(areas.get(key), dict) else {}
-        weight = "derived" if key == "cost" else weights.get(key, "—")
+        weight = weights.get(key, "—")
         items = area_findings
-        if not items and key == "cost":
-            items = [
-                {
-                    "title": driver.get("driver", ""),
-                    "object": "",
-                    "metric": driver.get("monthly_impact", ""),
-                    "evidence": driver.get("evidence", ""),
-                    "fix": driver.get("fix", ""),
-                }
-                for driver in cost.get("drivers", [])
-            ]
         plural = "" if len(items) == 1 else "s"
-        detail = (f"derived, {len(items)} driver{plural}" if key == "cost" else f"score {weight}, {len(items)} finding{plural}")
+        detail = f"score {weight}, {len(items)} finding{plural}"
         lines.append(f"### {label} — {status} ({detail})")
         lines.append("")
         summary = note.get("summary") or (
@@ -390,7 +429,8 @@ def render_markdown(data: dict) -> str:
                 metric = finding.get("metric") or finding.get("cost_note") or ""
                 suffix = f" — {metric}" if metric else ""
                 obj = f" (`{finding.get('object', '')}`)" if finding.get("object") else ""
-                lines.append(f"- **{finding.get('title', '')}**{obj}{suffix}")
+                risk = " **[correctness risk]**" if finding.get("risk") else ""
+                lines.append(f"- **{finding.get('title', '')}**{obj}{suffix}{risk}")
                 if finding.get("evidence"):
                     lines.append(f"  - Evidence: {finding['evidence']}")
                 if finding.get("false_positives"):
@@ -406,8 +446,7 @@ def render_markdown(data: dict) -> str:
             lines.append("- No action required.")
         lines.append("")
         impact = note.get("impact") or ("" if items else "No material savings identified.")
-        if not impact and key == "cost" and dollars.get("total_low") is not None:
-            impact = f"About ${_num(dollars.get('total_low'), 2)}–${_num(dollars.get('total_high'), 2)} per month."
+
         if impact:
             lines.append(f"**Impact if improved.** {impact}")
             lines.append("")
@@ -560,7 +599,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.check:
-        data = load_json(args.findings)
+        data = normalize(load_json(args.findings))
         problems = validate(data)
         if problems:
             for problem in problems:
@@ -572,10 +611,10 @@ def main() -> None:
     if not args.out:
         parser.error("--out is required unless --check is used")
 
-    render(args.findings, args.template, args.out)
+    data = normalize(load_json(args.findings))
+    render_data(data, args.template, args.out)
 
     if args.md_out:
-        data = load_json(args.findings)
         args.md_out.parent.mkdir(parents=True, exist_ok=True)
         args.md_out.write_text(render_markdown(data), encoding="utf-8")
         print(f"wrote {args.md_out} ({args.md_out.stat().st_size:,} bytes)")

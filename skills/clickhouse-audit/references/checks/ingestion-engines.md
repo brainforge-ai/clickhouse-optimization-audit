@@ -1,7 +1,7 @@
-# architecture-engines
+# ingestion-engines
 
 **Rule IDs:** `playbook:3-pick-an-engine`, `architecture-advisor:decision-late-arriving-upserts`, `architecture-advisor:decision-real-time-preaggregation`
-**Area:** Architecture
+**Area:** Ingestion & pipelines
 **Severity:** HIGH
 **Evidence:** Inventory query 3 (engine), DDL, workload query 6
 

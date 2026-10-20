@@ -1,7 +1,7 @@
-# schema-mv-refresh
+# model-mv-refresh
 
 **Rule IDs:** `playbook:materialized-view-freshness`
-**Area:** Schema
+**Area:** Data model & storage
 **Severity:** MEDIUM
 **Evidence:** `system.view_refreshes`, `system.tables` for refreshable MVs
 

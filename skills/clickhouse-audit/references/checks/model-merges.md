@@ -1,7 +1,7 @@
-# infra-merges
+# model-merges
 
 **Rule IDs:** `playbook:4-insert-strategy`, `architecture-advisor:decision-ingestion-strategy`
-**Area:** Infrastructure
+**Area:** Data model & storage
 **Severity:** MEDIUM
 **Evidence:** Inventory query 6 (active merges, rows read)
 

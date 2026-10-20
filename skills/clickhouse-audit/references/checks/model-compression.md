@@ -1,7 +1,7 @@
-# infra-compression
+# model-compression
 
 **Rule IDs:** `playbook:3.2-data-types`, `playbook:3.6-other-design-levers`, `schema-types-native-types`, `schema-types-lowcardinality`
-**Area:** Infrastructure / Schema
+**Area:** Data model & storage
 **Severity:** MEDIUM
 **Evidence:** Inventory queries 4 and 5 (compressed vs uncompressed bytes)
 

@@ -1,7 +1,7 @@
-# precomputation-projections
+# query-precomputation-projections
 
 **Rule IDs:** `query-mv-incremental`, `playbook:3.4-materialized-views-and-projections`
-**Area:** Pre-computation
+**Area:** Query efficiency
 **Severity:** MEDIUM
 **Evidence:** Inventory query 8 (existing projections), workload query 1, deep dive
 

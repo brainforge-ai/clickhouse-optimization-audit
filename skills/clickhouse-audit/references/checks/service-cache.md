@@ -1,7 +1,7 @@
-# infra-cache
+# service-cache
 
 **Rule IDs:** `playbook:4-caching-and-the-latency-cliff`
-**Area:** Infrastructure
+**Area:** Service health
 **Severity:** MEDIUM
 **Evidence:** Workload query 9 (cache vs source reads)
 

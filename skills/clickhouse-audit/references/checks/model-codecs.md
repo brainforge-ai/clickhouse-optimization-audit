@@ -1,7 +1,7 @@
-# schema-codecs
+# model-codecs
 
 **Rule IDs:** `playbook:3.6-codecs`
-**Area:** Schema
+**Area:** Data model & storage
 **Severity:** MEDIUM
 **Evidence:** Inventory query 4 (`compression_codec`, column bytes, type)
 

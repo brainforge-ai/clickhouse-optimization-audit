@@ -1,7 +1,7 @@
-# infra-service-shape
+# service-shape
 
 **Rule IDs:** `playbook:4-sizing-and-scaling`, `playbook:4-workload-isolation`
-**Area:** Infrastructure
+**Area:** Service health
 **Severity:** MEDIUM
 **Evidence:** `get_service_details`, workload queries 6 and 7
 

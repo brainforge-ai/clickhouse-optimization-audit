@@ -16,19 +16,23 @@ Sum the weights of all findings in an area.
 | 2–5 | Yellow |
 | 0–1 | Green |
 
-Areas: `infrastructure`, `schema`, `architecture`, `queries`, `cost`.
+Scored areas, by key and label:
 
-Pre-computation findings are scored under `queries`, so every finding belongs to a scored area. Keep the `query-mv-*` rule ID to show the link.
-
-Cost scoring is derived from the cost drivers, not from a separate findings list:
-
-| Potential reduction | Score |
+| Key | Label |
 | --- | --- |
-| Storage > 20% or read volume > 30% | Red |
-| Storage 10–20% or read volume 15–30% | Yellow |
-| Below those | Green |
+| `service_health` | Service health |
+| `data_model` | Data model & storage |
+| `ingestion` | Ingestion & pipelines |
+| `query_efficiency` | Query efficiency |
+| `data_lifecycle` | Data lifecycle |
 
-Do not double-count a finding. A pruning problem is one finding in `queries`; its cost effect appears in the Cost Drivers table, not as a second finding.
+Pre-computation findings are scored under `query_efficiency`. Every finding belongs to exactly one scored area.
+
+**Cost is not a scored area.** It is a derived panel: `cost.measured` holds the measured terms, `cost.drivers` holds one entry per saving with the finding IDs that cause it. A cost driver never repeats a finding.
+
+A finding that is a correctness risk sets `"risk": true`. Examples: stale refreshable MV, failed dictionary, replication lag, TTL that deletes live data. Risk findings still score in their area; the flag only changes how the report labels them.
+
+Do not double-count a finding. A pruning problem is one finding in `query_efficiency`; its cost effect appears in the Cost Drivers table, not as a second finding.
 
 ## Impact, confidence, effort
 
@@ -65,7 +69,7 @@ Write exactly this shape. The HTML renderer reads it directly. `scope.window_day
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "generated_at": "2026-10-20T12:00:00Z",
   "scope": {
     "service": "analytics-prod",
@@ -83,27 +87,27 @@ Write exactly this shape. The HTML renderer reads it directly. `scope.window_day
     "audit_queries": 38
   },
   "scores": {
-    "infrastructure": "Yellow",
-    "schema": "Red",
-    "architecture": "Yellow",
-    "queries": "Red",
-    "cost": "Red"
+    "service_health": "Yellow",
+    "data_model": "Red",
+    "ingestion": "Yellow",
+    "query_efficiency": "Red",
+    "data_lifecycle": "Red"
   },
   "score_weights": {
-    "infrastructure": 4,
-    "schema": 9,
-    "architecture": 4,
-    "queries": 6,
-    "cost": 0
+    "service_health": 4,
+    "data_model": 9,
+    "ingestion": 4,
+    "query_efficiency": 6,
+    "data_lifecycle": 2
   },
   "summary": "Three sentences. What is wasting the most, why, and the first action.",
   "areas": {
-    "infrastructure": {
+    "service_health": {
       "summary": "One sentence on what the audit checked and why the status is what it is.",
       "checked": ["active parts per table", "merge backlog", "service shape"],
       "impact": "One line on what fixing the area is worth. Use No material savings identified for a green area with none."
     },
-    "schema": {
+    "data_model": {
       "summary": "One sentence.",
       "impact": "One line."
     }
@@ -113,8 +117,9 @@ Write exactly this shape. The HTML renderer reads it directly. `scope.window_day
       "id": "F1",
       "rule_id": "schema-pk-cardinality-order",
       "rule_ids": ["schema-pk-cardinality-order", "schema-pk-prioritize-filters"],
-      "area": "Schema",
+      "area": "Data model & storage",
       "severity": "CRITICAL",
+      "risk": false,
       "title": "Ordering key leads with a UUID",
       "object": "default.events",
       "metric": "12,204 granules read per query, 0 pruned",
@@ -222,5 +227,7 @@ Rules for the JSON:
 - `cost.total_low` and `total_high` are the bounds of the estimate. If only storage is claimed, they are equal.
 - `checks_not_run` is required, even when empty. An area with any entry cannot score Green.
 - `gaps` is required, even when empty. Each gap states what is missing and the consequence for the score.
-- `scores.cost` is derived as above; `score_weights.cost` is `0`.
+- `scores` has exactly the five scored keys. There is no `scores.cost`.
+- `score_weights` matches the sum of finding weights per area. `data_lifecycle` weight comes from its findings, not from storage percentages.
+- `risk` is optional and defaults to false.
 - Every finding has a `rule_id`. If a finding comes from the Playbook rather than a vendored rule, use a `playbook:` or `architecture-advisor:` prefix.

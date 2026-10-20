@@ -1,6 +1,6 @@
 # ClickHouse Optimization Audit
 
-A free Claude plugin from Brainforge. It audits one ClickHouse Cloud service read-only and returns a 360° optimization report: infrastructure, schema, architecture, queries, pre-computation and cost.
+A free Claude plugin from Brainforge. It audits one ClickHouse Cloud service read-only and returns a 360° optimization report across five areas: service health, data model and storage, ingestion and pipelines, query efficiency, and data lifecycle. Cost is derived from the findings, not scored separately.
 
 No backend. No hosting. No telemetry. Everything runs inside Claude through ClickHouse Cloud's managed remote MCP server.
 
@@ -77,12 +77,13 @@ Before querying, the plugin states the window, the approximate query count (arou
 
 | Area | Examples |
 | --- | --- |
-| **Infrastructure** | Parts per partition, merge backlog, compression ratio, cache hit rate, service shape vs sustained load |
-| **Schema** | Empty or `tuple()` ordering keys, high-cardinality leading columns, key order, missing filter columns, String vs LowCardinality/Enum, oversized integers, Nullable, DateTime64(9), Float for money, partition count and key, TTL, codecs, skip indexes |
-| **Architecture** | Insert batch size and cadence, async inserts, engine choice, ReplacingMergeTree without a version, `FINAL`, join algorithms and memory, mixed workloads |
-| **Queries** | Top patterns by reads, duration and memory; full-scan ratio; `SELECT *`; non-key filters; functions on key columns; `LIMIT` without `ORDER BY`; missed `PREWHERE` |
-| **Pre-computation** | Repeated heavy aggregations; unused materialized views; nested view chains; projection candidates |
-| **Cost** | Storage and compute drivers tied to the findings that would reduce them |
+| **Service health** | Replicas, memory, disk headroom, query errors, replication lag, cache hit rate, idle scaling, workload isolation |
+| **Data model & storage** | Empty or `tuple()` ordering keys, key order, String vs LowCardinality/Enum, oversized integers, Nullable, DateTime64(9), partition count and key, TTL, codecs, skip indexes, parts, merges, compression, refreshable MV freshness, duplicate columns |
+| **Ingestion & pipelines** | Insert batch size and cadence, async inserts, engine choice, ReplacingMergeTree without a version, `FINAL`, dictionaries, duplicate tables from reloads |
+| **Query efficiency** | Top patterns by reads, duration and memory; full-scan ratio; `SELECT *`; non-key filters; functions on key columns; joins and memory; grain mismatch when an aggregate already exists; unused materialized views and projections |
+| **Data lifecycle** | Tables never read or not read for 30 to 90+ days, TTL and retention, archival, copies kept without a reason |
+
+Cost is not a scored area. The report derives a cost panel from measured terms and the findings that would reduce them, so nothing is counted twice.
 
 The reasoning is grounded in ClickHouse's own guidance. The plugin vendors `clickhouse-best-practices` and `clickhouse-architecture-advisor` from [ClickHouse/agent-skills](https://github.com/ClickHouse/agent-skills) (Apache-2.0) at a pinned commit. See `skills/clickhouse-audit/references/vendor/clickhouse/VENDORED.md`.
 
@@ -115,7 +116,7 @@ Every dollar figure carries the pricing date and this footer: *Estimate based on
 ## Limits
 
 - **Saved queries are not auditable.** ClickHouse Cloud stores them in console metadata, not a system table. Views and materialized views are audited; saved queries only if pasted.
-- **Infrastructure is partial.** The remote MCP exposes no CPU, disk or host metrics. The audit uses parts, merges, cache counters and service metadata.
+- **Service health is partial.** The remote MCP exposes no CPU or host metrics. The audit uses parts, merges, cache counters, errors, disk and service metadata.
 - **`system.query_log` is a rolling window.** Short retention or missing permission is reported as a gap.
 - **SharedMergeTree services** do not have classic replica lag. The audit skips that check rather than reporting a false finding.
 - **Dollar figures are estimates.** Pricing changes. The pinned rate file is dated and the report says so.

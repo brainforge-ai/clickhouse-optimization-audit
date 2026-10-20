@@ -1,7 +1,7 @@
-# schema-json
+# model-json
 
 **Rule IDs:** `schema-json-when-to-use`
-**Area:** Schema
+**Area:** Data model & storage
 **Severity:** MEDIUM
 **Evidence:** Inventory query 4 (types), DDL for tables with JSON/Map/String payload columns
 

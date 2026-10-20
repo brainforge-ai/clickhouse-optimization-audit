@@ -1,7 +1,7 @@
-# architecture-workloads
+# service-workloads
 
 **Rule IDs:** `playbook:4-workload-isolation`, `playbook:4-sizing-and-scaling`, `architecture-advisor:decision-partitioning-timeseries`
-**Area:** Architecture
+**Area:** Service health
 **Severity:** MEDIUM
 **Evidence:** Workload queries 6 and 7, `get_service_details`
 

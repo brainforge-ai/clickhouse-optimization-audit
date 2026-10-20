@@ -1,6 +1,6 @@
 ---
 name: clickhouse-audit
-description: Audit a ClickHouse Cloud service for optimization opportunities across infrastructure, schema, architecture, queries, pre-computation and cost. Use when the user asks to audit, review, profile, optimize, or reduce cost on ClickHouse, or runs /clickhouse-optimization-audit:audit.
+description: Audit a ClickHouse Cloud service for optimization opportunities across service health, data model and storage, ingestion and pipelines, query efficiency, and data lifecycle. Use when the user asks to audit, review, profile, optimize, or reduce cost on ClickHouse, or runs /clickhouse-optimization-audit:audit.
 ---
 
 # ClickHouse Optimization Audit
@@ -128,14 +128,15 @@ A check you cannot evaluate is not a pass. Add it to `checks_not_run` with the r
 
 Areas and files:
 
-| Area | Files |
-| --- | --- |
-| Infrastructure | `$ROOT/references/checks/infra-parts.md`, `$ROOT/references/checks/infra-merges.md`, `$ROOT/references/checks/infra-compression.md`, `$ROOT/references/checks/infra-cache.md`, `$ROOT/references/checks/infra-service-shape.md`, `$ROOT/references/checks/infra-errors.md`, `$ROOT/references/checks/infra-replication.md`, `$ROOT/references/checks/infra-disk.md` |
-| Schema | `$ROOT/references/checks/schema-order-by.md`, `$ROOT/references/checks/schema-types.md`, `$ROOT/references/checks/schema-partitioning.md`, `$ROOT/references/checks/schema-json.md`, `$ROOT/references/checks/schema-codecs.md`, `$ROOT/references/checks/schema-skip-indexes.md`, `$ROOT/references/checks/schema-mv-refresh.md`, `$ROOT/references/checks/schema-redundancy.md` |
-| Architecture | `$ROOT/references/checks/architecture-ingestion.md`, `$ROOT/references/checks/architecture-engines.md`, `$ROOT/references/checks/architecture-joins.md`, `$ROOT/references/checks/architecture-workloads.md`, `$ROOT/references/checks/architecture-dictionaries.md`, `$ROOT/references/checks/architecture-duplicates.md` |
-| Queries | `$ROOT/references/checks/query-pruning.md`, `$ROOT/references/checks/query-patterns.md`, `$ROOT/references/checks/query-joins.md`, `$ROOT/references/checks/query-grain-mismatch.md` |
-| Pre-computation | `$ROOT/references/checks/precomputation-mv.md`, `$ROOT/references/checks/precomputation-projections.md` |
-| Cost | `$ROOT/references/checks/cost-storage.md`, `$ROOT/references/checks/cost-compute.md`, `$ROOT/references/checks/cost-unused-tables.md` |
+| Area | Key | Files |
+| --- | --- | --- |
+| Service health | `service_health` | `$ROOT/references/checks/service-shape.md`, `$ROOT/references/checks/service-cache.md`, `$ROOT/references/checks/service-errors.md`, `$ROOT/references/checks/service-replication.md`, `$ROOT/references/checks/service-disk.md`, `$ROOT/references/checks/service-workloads.md`, `$ROOT/references/checks/service-compute.md` |
+| Data model & storage | `data_model` | `$ROOT/references/checks/model-order-by.md`, `$ROOT/references/checks/model-types.md`, `$ROOT/references/checks/model-partitioning.md`, `$ROOT/references/checks/model-json.md`, `$ROOT/references/checks/model-codecs.md`, `$ROOT/references/checks/model-skip-indexes.md`, `$ROOT/references/checks/model-mv-refresh.md`, `$ROOT/references/checks/model-redundancy.md`, `$ROOT/references/checks/model-parts.md`, `$ROOT/references/checks/model-merges.md`, `$ROOT/references/checks/model-compression.md` |
+| Ingestion & pipelines | `ingestion` | `$ROOT/references/checks/ingestion-batch.md`, `$ROOT/references/checks/ingestion-engines.md`, `$ROOT/references/checks/ingestion-dictionaries.md`, `$ROOT/references/checks/ingestion-duplicates.md` |
+| Query efficiency | `query_efficiency` | `$ROOT/references/checks/query-pruning.md`, `$ROOT/references/checks/query-patterns.md`, `$ROOT/references/checks/query-joins.md`, `$ROOT/references/checks/query-joins-strategy.md`, `$ROOT/references/checks/query-grain-mismatch.md`, `$ROOT/references/checks/query-precomputation-mv.md`, `$ROOT/references/checks/query-precomputation-projections.md` |
+| Data lifecycle | `data_lifecycle` | `$ROOT/references/checks/lifecycle-storage.md`, `$ROOT/references/checks/lifecycle-unused-tables.md` |
+
+Cost is not a scored area. It is a derived panel built from `cost.measured` and `cost.drivers`. A cost driver references finding IDs; it never creates a second finding.
 
 Cross-check reasoning against the vendored rules under `$ROOT/references/vendor/clickhouse/`. Cite the rule ID, not the vendor file name.
 
@@ -143,8 +144,10 @@ Cross-check reasoning against the vendored rules under `$ROOT/references/vendor/
 
 Use `$ROOT/references/rubric.md`.
 
+- Five scored areas: `service_health`, `data_model`, `ingestion`, `query_efficiency`, `data_lifecycle`. Cost is derived, not scored.
 - Weight: CRITICAL 3, HIGH 2, MEDIUM 1.
 - Per area: Red if any CRITICAL or total ≥ 6; Yellow 2–5; Green 0–1.
+- Every finding carries one area and one `rule_id`. A finding that is really a correctness risk (stale MV, failed dictionary, replication lag, TTL deleting live data) sets `"risk": true`. Risk findings still score in their area.
 - Rank findings by `impact × confidence ÷ effort`.
 - The top 3 findings that have a safe rewrite get one from `$ROOT/references/rewrites.md`, with a before/after measurement query. If a finding has no safe rewrite, skip it and take the next finding.
 - Label every rewrite "Review before applying". Never execute it.

@@ -1,7 +1,7 @@
 # query-patterns
 
 **Rule IDs:** `playbook:3.6-write-fast-queries`, `query-join-filter-before`
-**Area:** Queries
+**Area:** Query efficiency
 **Severity:** HIGH
 **Evidence:** Workload query 1 (`sample_query`, read/result ratio)
 

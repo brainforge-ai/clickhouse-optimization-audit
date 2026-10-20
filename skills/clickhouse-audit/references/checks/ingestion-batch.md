@@ -1,7 +1,7 @@
-# architecture-ingestion
+# ingestion-batch
 
 **Rule IDs:** `insert-batch-size`, `insert-async-small-batches`, `insert-format-native`, `insert-mutation-avoid-update`, `insert-mutation-avoid-delete`, `insert-optimize-avoid-final`, `architecture-advisor:decision-ingestion-strategy`
-**Area:** Architecture
+**Area:** Ingestion & pipelines
 **Severity:** CRITICAL when average batch is below 1,000 rows; HIGH when below 10,000
 **Evidence:** Workload query 6 (inserts per hour, rows per insert), inventory query 6 (merges), DDL for mutation and `OPTIMIZE`
 

@@ -1,7 +1,7 @@
 # query-joins
 
 **Rule IDs:** `query-join-choose-algorithm`, `query-join-use-any`, `query-join-filter-before`, `query-join-consider-alternatives`, `query-join-null-handling`
-**Area:** Queries
+**Area:** Query efficiency
 **Severity:** HIGH
 **Evidence:** Workload queries 1–3 (sample query, max memory), DDL
 

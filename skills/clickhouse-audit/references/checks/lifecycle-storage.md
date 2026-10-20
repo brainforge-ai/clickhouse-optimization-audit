@@ -1,7 +1,7 @@
-# cost-storage
+# lifecycle-storage
 
 **Rule IDs:** `cost:storage`, plus the schema and infra findings that cause it
-**Area:** Cost
+**Area:** Data lifecycle
 **Severity:** HIGH when savings exceed 20% of stored bytes
 **Evidence:** Inventory queries 3–5, workload query 5
 

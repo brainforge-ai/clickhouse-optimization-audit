@@ -221,6 +221,7 @@
   details.evidence p { font-size: 13px; margin: 6px 0 0; }
   .impact { margin-top: 18px; padding: 12px 14px; border-radius: 10px; background: var(--code-bg); }
   .impact p { margin: 0; }
+  .risk { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--red); background: rgba(179, 38, 30, .1); vertical-align: 1px; }
   .status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
   .status.green { color: var(--green); background: rgba(46, 125, 50, .1); }
   .status.yellow { color: var(--yellow); background: rgba(168, 100, 0, .1); }
@@ -318,7 +319,7 @@
     <div class="grid cards" id="precomputation"></div>
   </section>
   <section>
-    <h2>Cost</h2>
+    <h2>Cost impact (derived)</h2>
     <div class="money" id="money"></div>
     <h3 style="margin-top:24px">Measured terms</h3>
     <table id="measured"></table>
@@ -417,50 +418,47 @@
   $("summary").textContent = data.summary || "";
 
   var areas = [
-    ["infrastructure", "Infrastructure"],
-    ["schema", "Schema"],
-    ["architecture", "Architecture"],
-    ["queries", "Queries"],
-    ["cost", "Cost efficiency"]
+    ["service_health", "Service health"],
+    ["data_model", "Data model & storage"],
+    ["ingestion", "Ingestion & pipelines"],
+    ["query_efficiency", "Query efficiency"],
+    ["data_lifecycle", "Data lifecycle"]
   ];
   $("scores").innerHTML = areas.map(function (a) {
     var value = scores[a[0]] || "—";
     var cls = String(value).toLowerCase();
-    var weight = a[0] === "cost" ? "derived from drivers" : "weight " + (weights[a[0]] == null ? "—" : weights[a[0]]);
+    var weight = "weight " + (weights[a[0]] == null ? "—" : weights[a[0]]);
     return '<div class="score ' + esc(cls) + '"><div class="label">' + esc(a[1]) + '</div><div class="value"><span class="dot"></span>' + esc(value) + '</div><div class="weight">' + esc(weight) + "</div></div>";
   }).join("");
 
   var findings = data.findings || [];
   var areaNotes = data.areas || {};
   var areaMeta = [
-    ["infrastructure", "Infrastructure"],
-    ["schema", "Schema"],
-    ["architecture", "Architecture"],
-    ["queries", "Queries"],
-    ["cost", "Cost efficiency"]
+    ["service_health", "Service health"],
+    ["data_model", "Data model & storage"],
+    ["ingestion", "Ingestion & pipelines"],
+    ["query_efficiency", "Query efficiency"],
+    ["data_lifecycle", "Data lifecycle"]
   ];
 
-  function findingsFor(key) {
-    return findings.filter(function (f) { return String(f.area || "").toLowerCase() === key; });
+  function findingsFor(label) {
+    return findings.filter(function (f) { return String(f.area || "") === label; });
   }
 
   $("categories").innerHTML = areaMeta.map(function (a) {
     var key = a[0], name = a[1];
     var status = scores[key] || "—";
     var cls = String(status).toLowerCase();
-    var fs = findingsFor(key);
+    var fs = findingsFor(name);
     var note = areaNotes[key] || {};
-    var items = fs.length ? fs : (key === "cost" ? (cost.drivers || []).map(function (d) {
-      return { title: d.driver, object: "", metric: d.monthly_impact, evidence: d.evidence, fix: d.fix };
-    }) : []);
+    var items = fs;
     var count = items.length;
-    var sub = key === "cost"
-      ? "derived · " + count + (fs.length ? (count === 1 ? " finding" : " findings") : (count === 1 ? " driver" : " drivers"))
-      : "score " + (weights[key] == null ? "—" : weights[key]) + " · " + count + (count === 1 ? " finding" : " findings");
+    var sub = "score " + (weights[key] == null ? "—" : weights[key]) + " · " + count + (count === 1 ? " finding" : " findings");
 
     var issues = items.map(function (f) {
       var metric = f.metric || f.cost_note || "";
-      return "<li><b>" + esc(f.title) + "</b>" + (f.object ? " <code>" + esc(f.object) + "</code>" : "") +
+      var riskChip = f.risk ? ' <span class="risk">correctness risk</span>' : "";
+      return "<li><b>" + esc(f.title) + "</b>" + riskChip + (f.object ? " <code>" + esc(f.object) + "</code>" : "") +
         (metric ? '<span class="issue-metric">' + esc(metric) + "</span>" : "") +
         (f.evidence ? '<details class="evidence"><summary>Evidence</summary><p>' + esc(f.evidence) + "</p>" +
         (f.false_positives ? '<p class="note"><b>Not an issue if:</b> ' + esc(f.false_positives) + "</p>" : "") +
@@ -476,9 +474,6 @@
       : "";
 
     var impact = note.impact || (count ? "" : "No material savings identified.");
-    if (!impact && key === "cost" && dollars.total_low != null) {
-      impact = "About $" + num(dollars.total_low) + "–$" + num(dollars.total_high) + " per month.";
-    }
 
     var summaryText = note.summary || (count ? "The audit found " + count + " issue(s) in this area." : "No issues found.");
 

@@ -1,7 +1,7 @@
-# precomputation-mv
+# query-precomputation-mv
 
 **Rule IDs:** `query-mv-incremental`, `query-mv-refreshable`, `architecture-advisor:decision-real-time-preaggregation`
-**Area:** Pre-computation
+**Area:** Query efficiency
 **Severity:** HIGH
 **Evidence:** Workload query 1 (repeated normalized patterns with aggregation), inventory query 3 (existing MVs and their targets), workload query 5 (MV targets with no reads)
 

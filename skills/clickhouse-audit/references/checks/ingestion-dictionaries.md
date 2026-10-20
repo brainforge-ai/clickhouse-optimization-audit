@@ -1,7 +1,7 @@
-# architecture-dictionaries
+# ingestion-dictionaries
 
 **Rule IDs:** `playbook:dictionary-health`
-**Area:** Architecture
+**Area:** Ingestion & pipelines
 **Severity:** MEDIUM
 **Evidence:** `system.dictionaries`
 

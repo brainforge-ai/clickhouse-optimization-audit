@@ -1,7 +1,7 @@
-# architecture-joins
+# query-joins-strategy
 
 **Rule IDs:** `query-join-choose-algorithm`, `query-join-use-any`, `query-join-filter-before`, `query-join-consider-alternatives`, `query-join-null-handling`, `architecture-advisor:decision-join-enrichment`
-**Area:** Architecture / Queries
+**Area:** Query efficiency
 **Severity:** CRITICAL when join memory is the top memory consumer; HIGH otherwise
 **Evidence:** Workload queries 1–3 (sample query, max memory), inventory query 3 (engines), DDL for dictionaries
 

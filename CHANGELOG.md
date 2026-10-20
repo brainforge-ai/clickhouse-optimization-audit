@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0 — 2026-10-21
+
+Breaking taxonomy change, `schema_version: 2.0`.
+
+- Five scored areas by lever: Service health, Data model & storage, Ingestion & pipelines, Query efficiency, Data lifecycle.
+- Cost is no longer a scored area. It is a derived panel from measured terms and cost drivers.
+- Parts, merges and compression move from Infrastructure to Data model & storage. Engines, dictionaries and duplicate tables move to Ingestion & pipelines. Unread and stale tables move to Data lifecycle.
+- Check files renamed to `service-*`, `model-*`, `ingestion-*`, `query-*`, `lifecycle-*`.
+- New `risk` flag marks correctness risks (stale MV, failed dictionary, replication lag, TTL deleting live data).
+- The validator checks that a finding's rule prefix matches its area, and rejects the old `cost` score.
+- `schema_version: 1.0` files are migrated on read: old area keys map to the new ones.
+
 ## 0.8.1 — 2026-10-21
 
 - Remove the pasted booking URL at the bottom of the HTML report. The button carries the link.

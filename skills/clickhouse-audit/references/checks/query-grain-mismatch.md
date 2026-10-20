@@ -1,7 +1,7 @@
 # query-grain-mismatch
 
 **Rule IDs:** `playbook:grain-mismatch`, `playbook:materialized-view-not-used`
-**Area:** Queries
+**Area:** Query efficiency
 **Severity:** HIGH when the pattern reads more than 100 GB per day
 **Evidence:** Workload queries 1 and 4, inventory of MVs, aggregate tables and projections
 

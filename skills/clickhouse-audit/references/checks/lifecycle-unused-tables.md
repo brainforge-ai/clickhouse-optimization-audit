@@ -1,7 +1,7 @@
-# cost-unused-tables
+# lifecycle-unused-tables
 
 **Rule IDs:** `playbook:unused-tables`, `cost:storage`
-**Area:** Cost
+**Area:** Data lifecycle
 **Severity:** HIGH when unread bytes exceed 5% of stored bytes, MEDIUM otherwise
 **Evidence:** Workload query 5 (no reads in the window) plus the last-read query below
 

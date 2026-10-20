@@ -1,7 +1,7 @@
-# schema-types
+# model-types
 
 **Rule IDs:** `schema-types-native-types`, `schema-types-minimize-bitwidth`, `schema-types-lowcardinality`, `schema-types-enum`, `schema-types-avoid-nullable`
-**Area:** Schema
+**Area:** Data model & storage
 **Severity:** CRITICAL
 **Evidence:** Inventory query 4 (types, sizes, codecs)
 

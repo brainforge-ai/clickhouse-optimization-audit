@@ -1,7 +1,7 @@
-# schema-skip-indexes
+# model-skip-indexes
 
 **Rule IDs:** `query-index-skipping-indices`, `schema-pk-filter-on-orderby`
-**Area:** Schema / Queries
+**Area:** Data model & storage
 **Severity:** HIGH
 **Evidence:** Inventory query 7, deep dive plan, workload filter columns
 

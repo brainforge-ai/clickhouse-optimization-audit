@@ -1,7 +1,7 @@
-# infra-parts
+# model-parts
 
 **Rule IDs:** `playbook:4-ingest-lifecycle`, `architecture-advisor:decision-ingestion-strategy`
-**Area:** Infrastructure
+**Area:** Data model & storage
 **Severity:** HIGH
 **Evidence:** Inventory query 5 (active parts, partitions)
 

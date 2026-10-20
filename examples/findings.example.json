@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "generated_at": "2026-10-20T14:32:00Z",
   "scope": {
     "service": "demo-analytics",
@@ -8,8 +8,8 @@
     "tier": "Scale",
     "provider": "AWS",
     "region": "us-east-1",
-    "window_days": 7,
-    "window_start": "2026-10-13",
+    "window_days": null,
+    "window_start": "2026-08-01",
     "window_end": "2026-10-20",
     "databases": [
       "default",
@@ -26,18 +26,18 @@
     "audit_queries": 36
   },
   "scores": {
-    "infrastructure": "Yellow",
-    "schema": "Red",
-    "architecture": "Yellow",
-    "queries": "Yellow",
-    "cost": "Red"
+    "service_health": "Green",
+    "data_model": "Red",
+    "ingestion": "Yellow",
+    "query_efficiency": "Yellow",
+    "data_lifecycle": "Yellow"
   },
   "score_weights": {
-    "infrastructure": 2,
-    "schema": 4,
-    "architecture": 2,
-    "queries": 2,
-    "cost": 0
+    "service_health": 0,
+    "data_model": 4,
+    "ingestion": 2,
+    "query_efficiency": 2,
+    "data_lifecycle": 2
   },
   "summary": "The service reads 4.2 TB per day to return 38 GB, and the top ten query patterns prune almost no granules because the ordering key leads with a UUID. Two event tables and one staging table have not been read in seven days but hold 1.8 TB. Fixing the key and adding a daily rollup would cut read volume by roughly two thirds; TTL and type changes would remove about 3.3 TB of storage.",
   "findings": [
@@ -49,7 +49,7 @@
         "schema-pk-prioritize-filters",
         "schema-pk-filter-on-orderby"
       ],
-      "area": "Schema",
+      "area": "Data model & storage",
       "severity": "CRITICAL",
       "title": "Ordering key leads with a UUID and prunes no granules",
       "object": "default.events",
@@ -61,7 +61,8 @@
       "cost_impact": "high",
       "cost_note": "Accounts for about 1.9 TB/day of the 4.2 TB/day read volume.",
       "metric": "12,204 granules read per query, 0 pruned",
-      "rank_score": 3.0
+      "rank_score": 3.0,
+      "risk": false
     },
     {
       "id": "F2",
@@ -70,7 +71,7 @@
         "cost:storage",
         "infra-parts"
       ],
-      "area": "Infrastructure",
+      "area": "Data lifecycle",
       "severity": "HIGH",
       "title": "Three large tables have no reads in the window",
       "object": "default.events_raw, product.pageviews_staging, default.legacy_orders",
@@ -82,7 +83,8 @@
       "cost_impact": "high",
       "cost_note": "1.8 TB removable at the pinned storage rate.",
       "metric": "1.8 TB of 8.4 TB stored in unread tables",
-      "rank_score": 4.5
+      "rank_score": 4.5,
+      "risk": false
     },
     {
       "id": "F3",
@@ -91,7 +93,7 @@
         "insert-batch-size",
         "insert-async-small-batches"
       ],
-      "area": "Architecture",
+      "area": "Ingestion & pipelines",
       "severity": "HIGH",
       "title": "Small inserts create 4,200 parts per day",
       "object": "default.events",
@@ -103,7 +105,8 @@
       "cost_impact": "medium",
       "cost_note": "Reduces merge write amplification; no direct dollar saving at the current service shape.",
       "metric": "4,200 parts/day, merge level 10",
-      "rank_score": 9.0
+      "rank_score": 9.0,
+      "risk": false
     },
     {
       "id": "F4",
@@ -112,7 +115,7 @@
         "query-mv-incremental",
         "architecture-advisor:decision-real-time-preaggregation"
       ],
-      "area": "Queries",
+      "area": "Query efficiency",
       "severity": "HIGH",
       "title": "The same daily tenant rollup runs 38 times a day",
       "object": "default.events",
@@ -124,7 +127,8 @@
       "cost_impact": "high",
       "cost_note": "Removes about 1.1 TB/day of repeated reads.",
       "metric": "38 full scans/day, 1.9 TB read",
-      "rank_score": 4.5
+      "rank_score": 4.5,
+      "risk": false
     },
     {
       "id": "F5",
@@ -134,7 +138,7 @@
         "schema-types-lowcardinality",
         "schema-types-minimize-bitwidth"
       ],
-      "area": "Schema",
+      "area": "Data model & storage",
       "severity": "MEDIUM",
       "title": "Wide types and Nullable masks inflate storage",
       "object": "default.events columns",
@@ -146,7 +150,8 @@
       "cost_impact": "medium",
       "cost_note": "Estimated 0.6\u20131.2 TB storage reduction after backfill.",
       "metric": "910 GB across three columns",
-      "rank_score": 2.0
+      "rank_score": 2.0,
+      "risk": false
     }
   ],
   "precomputation": [
@@ -296,8 +301,8 @@
     "url": "https://www.brainforge.ai/free-consultation-call"
   },
   "areas": {
-    "infrastructure": {
-      "summary": "Parts and merges are under control, but three large tables were never read in the window.",
+    "service_health": {
+      "summary": "Parts, merges, cache and service shape are within normal ranges at this size.",
       "checked": [
         "active parts per table",
         "merge backlog",
@@ -305,23 +310,23 @@
         "cache hit rate",
         "service shape"
       ],
-      "impact": "Removing the unread tables frees 1.8 TB, about 21% of compressed storage."
+      "impact": "No material savings identified."
     },
-    "schema": {
+    "data_model": {
       "summary": "The ordering key disagrees with the filters in the top patterns, and wide Nullable types inflate storage.",
       "impact": "A new ordering key and tighter types cut read volume by roughly two thirds and storage by about 39%."
     },
-    "architecture": {
+    "ingestion": {
       "summary": "Ingestion sends small batches, so the service spends merge work it does not need.",
       "impact": "Batching inserts cuts parts from 4,200 to under 300 per day."
     },
-    "queries": {
+    "query_efficiency": {
       "summary": "One daily rollup is recomputed from raw data 38 times a day.",
       "impact": "A daily rollup replaces 38 scans with a 2 GB read, about 1.9 TB/day less."
     },
-    "cost": {
-      "summary": "Most of the bill is storage for tables nobody reads, plus repeated scans.",
-      "impact": "About $81\u2013302 per month, depending on whether a service-shape change is approved."
+    "data_lifecycle": {
+      "summary": "Three large tables were never read in the window.",
+      "impact": "Removing them frees 1.8 TB, about 21% of compressed storage."
     }
   },
   "checks_not_run": []

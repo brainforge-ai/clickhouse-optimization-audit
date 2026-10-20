@@ -1,7 +1,7 @@
-# architecture-duplicates
+# ingestion-duplicates
 
 **Rule IDs:** `playbook:duplicate-tables`, `cost:storage`
-**Area:** Architecture
+**Area:** Ingestion & pipelines
 **Severity:** HIGH when duplicates exceed 10% of stored bytes
 **Evidence:** Inventory queries 3 and 4 (table sizes, columns)
 

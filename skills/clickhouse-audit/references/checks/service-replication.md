@@ -1,7 +1,7 @@
-# infra-replication
+# service-replication
 
 **Rule IDs:** `playbook:replication-health`
-**Area:** Infrastructure
+**Area:** Service health
 **Severity:** HIGH
 **Evidence:** `system.replicas`, `system.replication_queue`
 

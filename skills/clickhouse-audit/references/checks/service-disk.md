@@ -1,7 +1,7 @@
-# infra-disk
+# service-disk
 
 **Rule IDs:** `playbook:disk-headroom`
-**Area:** Infrastructure
+**Area:** Service health
 **Severity:** HIGH
 **Evidence:** `system.disks` and `system.parts` by disk
 

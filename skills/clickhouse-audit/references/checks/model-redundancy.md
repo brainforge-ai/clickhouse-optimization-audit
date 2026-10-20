@@ -1,7 +1,7 @@
-# schema-redundancy
+# model-redundancy
 
 **Rule IDs:** `playbook:column-redundancy`, `schema-types-native-types`
-**Area:** Schema
+**Area:** Data model & storage
 **Severity:** MEDIUM when redundant columns exceed 10% of a table
 **Evidence:** Inventory query 4 (columns, compressed bytes, types)
 

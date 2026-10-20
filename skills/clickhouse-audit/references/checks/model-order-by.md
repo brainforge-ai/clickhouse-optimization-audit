@@ -1,7 +1,7 @@
-# schema-order-by
+# model-order-by
 
 **Rule IDs:** `schema-pk-plan-before-creation`, `schema-pk-cardinality-order`, `schema-pk-prioritize-filters`, `schema-pk-filter-on-orderby`
-**Area:** Schema
+**Area:** Data model & storage
 **Severity:** CRITICAL
 **Evidence:** Inventory query 3 (`sorting_key`, `primary_key`), deep dive (granules), workload query 1 (filter columns in sample queries)
 

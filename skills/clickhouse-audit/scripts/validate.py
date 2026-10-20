@@ -93,6 +93,19 @@ for path in checks_dir.glob("*.md"):
     check("## Fix" in body, f"{path.name} is missing a Fix section")
     check("## Effort" in body, f"{path.name} is missing an Effort section")
 
+VALID_AREAS = {"Service health", "Data model & storage", "Ingestion & pipelines", "Query efficiency", "Data lifecycle"}
+for path in checks_dir.glob("*.md"):
+    if path.name[0].isdigit():
+        continue
+    body = path.read_text(encoding="utf-8")
+    match = re.search(r"^\*\*Area:\*\* (.+)$", body, re.M)
+    check(bool(match) and match.group(1).strip() in VALID_AREAS,
+          f"{path.name}: Area must be one of {sorted(VALID_AREAS)}")
+
+for stale in ("infra-", "schema-", "architecture-", "cost-", "precomputation-"):
+    leftovers = list(checks_dir.glob(stale + "*.md"))
+    check(not leftovers, f"old check prefix {stale} still present: {[p.name for p in leftovers]}")
+
 vendor = SKILL / "references" / "vendor" / "clickhouse"
 for required in ("LICENSE", "NOTICE", "VENDORED.md", "clickhouse-best-practices", "clickhouse-architecture-advisor"):
     check((vendor / required).exists(), f"vendored ClickHouse content missing: {required}")
@@ -135,7 +148,7 @@ if example:
             rendered_md = md_out.read_text(encoding="utf-8")
             check("# ClickHouse Optimization Audit" in rendered_md, "rendered Markdown is missing the title")
             check("## Category detail" in rendered_md, "rendered Markdown is missing category detail")
-            check("### Infrastructure" in rendered_md, "rendered Markdown is missing area blocks")
+            check("### Service health" in rendered_md, "rendered Markdown is missing area blocks")
 
 
 # --- Rule ID traceability ------------------------------------------------

@@ -1,7 +1,7 @@
 # query-pruning
 
 **Rule IDs:** `schema-pk-filter-on-orderby`, `query-index-skipping-indices`
-**Area:** Queries
+**Area:** Query efficiency
 **Severity:** CRITICAL
 **Evidence:** Deep dive (granules read vs total), workload query 8 (pruning proxy), workload query 1 (sample queries)
 

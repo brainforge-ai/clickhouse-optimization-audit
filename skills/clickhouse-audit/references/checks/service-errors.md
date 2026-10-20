@@ -1,7 +1,7 @@
-# infra-errors
+# service-errors
 
 **Rule IDs:** `playbook:6-errors-and-limits`
-**Area:** Infrastructure
+**Area:** Service health
 **Severity:** MEDIUM
 **Evidence:** Workload query 10 (query_log exceptions) and `system.errors`
 
