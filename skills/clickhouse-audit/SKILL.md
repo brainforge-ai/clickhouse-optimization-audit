@@ -180,7 +180,7 @@ Build `findings.json` with the schema in `$ROOT/references/rubric.md`. Then:
      --open
    ```
    `--open` opens the HTML in the default browser. Pass it only when the run has a local shell and a desktop session. Skip it in a cloud or SSH session, or when the user says not to open a window. If it cannot open a browser, the script prints the path and carries on.
-   If Bash is not available, fill `$ROOT/references/report-template.md` for the Markdown and embed the same JSON into a copy of the HTML template.
+   If Bash is not available, stop and say the HTML report needs a shell. Do not hand-write the HTML.
 3. Verify the rendered HTML before showing anything:
    ```
    grep -c 'id="findings-data"' clickhouse-audit-<service>-<date>.html
@@ -282,7 +282,6 @@ Output is labeled **Query-level review**. No scorecard, no service-wide cost, no
 - `$ROOT/references/rubric.md` — weights, scoring, ranking, `findings.json` schema
 - `$ROOT/references/rewrites.md` — rewrite patterns
 - `$ROOT/references/cost-model.md` — cost formulas and rules
-- `$ROOT/references/report-template.md` — Markdown report
 - `$ROOT/references/report-template.html` — self-contained HTML report
 - `$ROOT/references/pricing/` — dated ClickHouse Cloud rates
 - `$ROOT/references/vendor/clickhouse/` — pinned ClickHouse best-practice rules (Apache-2.0)

@@ -6,16 +6,16 @@ No backend. No hosting. No telemetry. Everything runs inside Claude through Clic
 
 ## What you get
 
-- **Scorecard** — Red / Yellow / Green for infrastructure, schema, architecture, queries and cost efficiency.
+- **Scorecard** — Red / Yellow / Green for service health, data model & storage, ingestion & pipelines, query efficiency and data lifecycle.
 - **Ranked findings** — every one cites measured evidence and a ClickHouse best-practice rule ID.
-- **Top 3 rewrites** — concrete DDL or SQL, why it helps, and a before/after measurement query.
+- **Rewrite sketches** — concrete DDL or SQL with a before/after measurement, kept in a collapsed appendix.
 - **Pre-computation opportunities** — materialized views, projections and summary tables, with the exact patterns they replace.
 - **Cost** — read volume, storage, parts and cache hit rate in measured units, then estimated dollars where the arithmetic supports it.
 - **Three files** — Markdown, a self-contained HTML report, and `findings.json`.
 
 ## Requirements
 
-- Claude Code, Cowork, or claude.ai with plugins.
+- Claude Code, or Cowork with local tool execution. The report renderer needs a shell; chat-only surfaces cannot produce the HTML report.
 - A ClickHouse Cloud service.
 - **MCP enabled on that service** (see below).
 - A role that can `SELECT` from `system.query_log`, `system.parts`, `system.tables` and `system.columns`.
@@ -135,7 +135,7 @@ clickhouse-audit-<service>-<YYYY-MM-DD>.html
 clickhouse-audit-<service>-<YYYY-MM-DD>.json
 ```
 
-The HTML is one self-contained file: offline, light and dark themes, collapsible findings, print styles, inline SVG cost chart.
+The HTML is one self-contained file: offline, light and dark themes, collapsible categories, a derived cost panel and print styles.
 
 ## Troubleshooting
 

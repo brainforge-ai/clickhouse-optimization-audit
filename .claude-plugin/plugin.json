@@ -1,8 +1,8 @@
 {
   "name": "clickhouse-optimization-audit",
   "displayName": "ClickHouse Optimization Audit",
-  "version": "1.0.0",
-  "description": "Audit a ClickHouse Cloud service for infrastructure, schema, architecture, query, pre-computation and cost improvements. Read-only, evidence-backed, one browser login.",
+  "version": "1.0.1",
+  "description": "Read-only ClickHouse Cloud optimization audit across service health, data model and storage, ingestion and pipelines, query efficiency, and data lifecycle. Cost is derived from findings.",
   "author": {
     "name": "Brainforge",
     "email": "engineering@brainforge.ai",
