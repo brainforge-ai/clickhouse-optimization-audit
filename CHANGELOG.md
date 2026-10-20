@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.0 — 2026-10-21
+
+- `render_report.py --open` opens the finished HTML report in the default browser. The audit passes it when a local desktop session is available and skips it in cloud or SSH sessions.
+
 ## 0.7.0 — 2026-10-21
 
 - Default window is full retained history (`window_days: null`), not 7 days. A run can still ask for 1, 7, 30 or a custom number of days.

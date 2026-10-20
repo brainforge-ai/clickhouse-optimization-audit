@@ -536,6 +536,19 @@ def render_markdown(data: dict) -> str:
     return "\n".join(lines)
 
 
+def open_report(path: Path) -> None:
+    try:
+        import webbrowser
+
+        opened = webbrowser.open(path.resolve().as_uri())
+        if opened:
+            print(f"opened {path} in the default browser")
+        else:
+            print(f"could not open a browser; open {path} manually", file=sys.stderr)
+    except Exception as exc:  # headless, no browser, or a blocked opener
+        print(f"could not open a browser ({exc}); open {path} manually", file=sys.stderr)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--findings", required=True, type=Path)
@@ -543,6 +556,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path)
     parser.add_argument("--md-out", type=Path, help="also write a Markdown report")
     parser.add_argument("--check", action="store_true", help="validate only, do not render")
+    parser.add_argument("--open", dest="open_browser", action="store_true", help="open the HTML report in the default browser after writing it")
     args = parser.parse_args()
 
     if args.check:
@@ -565,6 +579,9 @@ def main() -> None:
         args.md_out.parent.mkdir(parents=True, exist_ok=True)
         args.md_out.write_text(render_markdown(data), encoding="utf-8")
         print(f"wrote {args.md_out} ({args.md_out.stat().st_size:,} bytes)")
+
+    if args.open_browser:
+        open_report(args.out)
 
 
 if __name__ == "__main__":

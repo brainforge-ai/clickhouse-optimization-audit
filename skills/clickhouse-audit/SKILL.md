@@ -173,8 +173,10 @@ Build `findings.json` with the schema in `$ROOT/references/rubric.md`. Then:
      --findings clickhouse-audit-<service>-<date>.json \
      --template "$ROOT/references/report-template.html" \
      --out clickhouse-audit-<service>-<date>.html \
-     --md-out clickhouse-audit-<service>-<date>.md
+     --md-out clickhouse-audit-<service>-<date>.md \
+     --open
    ```
+   `--open` opens the HTML in the default browser. Pass it only when the run has a local shell and a desktop session. Skip it in a cloud or SSH session, or when the user says not to open a window. If it cannot open a browser, the script prints the path and carries on.
    If Bash is not available, fill `$ROOT/references/report-template.md` for the Markdown and embed the same JSON into a copy of the HTML template.
 3. Verify the rendered HTML before showing anything:
    ```
