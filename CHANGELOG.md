@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 — 2026-10-21
+
+- New checks: stuck mutations, insert backpressure, query-level settings, shard topology, TTL that does not delete, storage tiering, MergeTree settings, query cache, aggregate correctness, Kafka consumer lag.
+- Unread-table recommendations now check views, MVs and dictionaries for dependents before suggesting a drop.
+- Preflight reads the available `query_log` columns and disables checks that need a column this version lacks.
+- Workload profile adds the hourly shape and labels read bytes as a sum across replicas and shards.
+- Ranking breaks ties by measured footprint; impact guidance is percentage-first.
+
 ## 1.0.1 — 2026-10-21
 
 - Five scored areas by lever: Service health, Data model & storage, Ingestion & pipelines, Query efficiency, Data lifecycle. Cost is a derived panel, not a score.

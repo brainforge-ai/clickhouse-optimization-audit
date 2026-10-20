@@ -57,7 +57,17 @@ confidence_value = high 3, medium 2, low 1
 effort_value     = low 1, medium 2, high 3
 ```
 
-Sort descending. Break ties in favour of CRITICAL, then lower effort.
+Sort descending. Break ties in favour of CRITICAL, then lower effort, then the larger measured footprint (bytes or read volume touched).
+
+The `impact` label must match the measured footprint:
+
+| Impact | Rule of thumb |
+| --- | --- |
+| high | More than 30% of the area's waste, or more than 100 GB/day of reads, or a correctness defect |
+| medium | 5 to 30% of the waste, or 10 to 100 GB/day |
+| low | Below 5%, or a single small table |
+
+A threshold is a percentage of the service footprint with an absolute floor, never an absolute number alone. One gigabyte is large on a 10 GB service and noise on a 10 PB one.
 
 ## Rewrites
 

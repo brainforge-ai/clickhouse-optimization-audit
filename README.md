@@ -77,11 +77,11 @@ Before querying, the plugin states the window, the approximate query count (arou
 
 | Area | Examples |
 | --- | --- |
-| **Service health** | Replicas, memory, disk headroom, query errors, replication lag, cache hit rate, idle scaling, workload isolation |
-| **Data model & storage** | Empty or `tuple()` ordering keys, key order, String vs LowCardinality/Enum, oversized integers, Nullable, DateTime64(9), partition count and key, TTL, codecs, skip indexes, parts, merges, compression, refreshable MV freshness, duplicate columns |
-| **Ingestion & pipelines** | Insert batch size and cadence, async inserts, engine choice, ReplacingMergeTree without a version, `FINAL`, dictionaries, duplicate tables from reloads |
-| **Query efficiency** | Top patterns by reads, duration and memory; full-scan ratio; `SELECT *`; non-key filters; functions on key columns; joins and memory; grain mismatch when an aggregate already exists; unused materialized views and projections |
-| **Data lifecycle** | Tables never read or not read for 30 to 90+ days, TTL and retention, archival, copies kept without a reason |
+| **Service health** | Replicas, memory, disk headroom, query errors, replication lag, cache hit rate, idle scaling, workload isolation, stuck mutations, insert backpressure, shard topology |
+| **Data model & storage** | Empty or `tuple()` ordering keys, key order, String vs LowCardinality/Enum, oversized integers, Nullable, DateTime64(9), partition count and key, codecs, skip indexes, parts, merges, compression, MergeTree settings, refreshable MV freshness, duplicate columns, aggregate correctness |
+| **Ingestion & pipelines** | Insert batch size and cadence, async inserts, engine choice, ReplacingMergeTree without a version, `FINAL`, dictionaries, duplicate tables from reloads, rejected or delayed inserts, Kafka consumer lag |
+| **Query efficiency** | Top patterns by reads, duration and memory; full-scan ratio; `SELECT *`; non-key filters; functions on key columns; joins and memory; grain mismatch; unused materialized views and projections; query settings that disable pruning or spilling; query cache hit rate |
+| **Data lifecycle** | Tables never read or not read for 30 to 90+ days, TTL that does not delete, stuck moves, storage tiering, archival, copies kept without a reason |
 
 Cost is not a scored area. The report derives a cost panel from measured terms and the findings that would reduce them, so nothing is counted twice.
 

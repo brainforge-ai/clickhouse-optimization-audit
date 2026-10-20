@@ -42,6 +42,34 @@ LIMIT 5000
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 
+## Before you call a table unused: dependencies
+
+An unread table can still be read by a view, a materialized view or a dictionary. Check dependents before recommending a drop.
+
+```sql
+/* bf_audit */
+SELECT database, name, dependencies_database, dependencies_table
+FROM system.dependencies
+WHERE dependencies_database = '<db>' AND dependencies_table = '<table>'
+LIMIT 100
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+If `system.dependencies` is not available, search DDL instead:
+
+```sql
+/* bf_audit */
+SELECT database, name, engine
+FROM system.tables
+WHERE database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '_temporary_and_external_tables')
+  AND (positionCaseInsensitive(as_select, '<db>.<table>') > 0
+       OR positionCaseInsensitive(create_table_query, '<db>.<table>') > 0)
+LIMIT 100
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+Any dependent object downgrades the finding to "review required", sets `"risk": true`, and removes the automatic drop recommendation.
+
 ## Why it matters
 
 Storage is billed every month on compressed bytes. A table nobody reads is the cheapest saving in the audit, and the query gives an exact last-read date instead of a guess.

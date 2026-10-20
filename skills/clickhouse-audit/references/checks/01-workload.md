@@ -116,6 +116,30 @@ SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 
 False positives: table names that appear only through aliases or CTEs may not match, and `tables` can include subquery aliases. Confirm a zero-read table against the DDL or the user before calling it unused.
 
+## 5b. Hourly shape
+
+```sql
+/* bf_audit */
+SELECT
+  toStartOfHour(event_time) AS hour,
+  count() AS queries,
+  sum(read_bytes) AS read_bytes,
+  max(memory_usage) AS peak_memory
+FROM clusterAllReplicas('<cluster>', system.query_log)
+WHERE type = 'QueryFinish'
+  AND is_initial_query = 1
+  AND query_kind = 'Select'
+  AND query NOT LIKE '%bf_audit%'
+GROUP BY hour
+ORDER BY hour
+LIMIT 720
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+Use this to separate peak from idle. A service that is busy for two hours a day has a different shape problem from one that is flat.
+
+**Read bytes are a sum across replicas and shards.** A distributed query appears once per shard. Say "sum across replicas" in the report and do not present it as unique bytes read.
+
 ## 6. Insert cadence and batch size
 
 ```sql

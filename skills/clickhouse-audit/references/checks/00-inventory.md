@@ -60,6 +60,23 @@ SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 
 Set `scope.window_start` and `scope.window_end` from the measured query_log range. When the requested window is longer than the log, report the measured range and the shortfall in the gaps. Never state a window the log cannot support.
 
+## 1c. query_log schema gate
+
+Columns differ across ClickHouse versions. Read the available columns before the workload pass:
+
+```sql
+/* bf_audit */
+SELECT name
+FROM system.columns
+WHERE database = 'system' AND table = 'query_log'
+  AND name IN ('query_kind', 'tables', 'Settings', 'query_cache_usage', 'memory_usage', 'read_bytes', 'is_initial_query')
+ORDER BY name
+LIMIT 50
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+For each missing column, disable the checks that need it and add a `checks_not_run` entry. Never substitute a guess for a missing column.
+
 ## 2. Cluster name (decides the query_log source)
 
 ```sql
