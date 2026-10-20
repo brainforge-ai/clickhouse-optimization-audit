@@ -75,6 +75,30 @@ def validate(data: dict) -> list[str]:
             if scores.get(area) not in SCORES:
                 problems.append(f"scores.{area} must be one of {sorted(SCORES)}")
 
+    areas = data.get("areas")
+    if areas is not None:
+        if not isinstance(areas, dict):
+            problems.append("areas must be an object")
+        else:
+            for key, value in areas.items():
+                if key not in AREAS:
+                    problems.append(f"areas.{key} is not a scored area")
+                    continue
+                if not isinstance(value, dict):
+                    problems.append(f"areas.{key} must be an object")
+                    continue
+                for field in value:
+                    if field not in ("summary", "checked", "impact"):
+                        problems.append(f"areas.{key}.{field} is not a recognised field")
+                for field in ("summary", "impact"):
+                    if field in value and not isinstance(value[field], str):
+                        problems.append(f"areas.{key}.{field} must be a string")
+                if "checked" in value and not (
+                    isinstance(value["checked"], list)
+                    and all(isinstance(item, str) for item in value["checked"])
+                ):
+                    problems.append(f"areas.{key}.checked must be an array of strings")
+
     findings = data.get("findings")
     if not isinstance(findings, list):
         problems.append("findings must be an array")
@@ -83,6 +107,8 @@ def validate(data: dict) -> list[str]:
             if not isinstance(finding, dict):
                 problems.append(f"findings[{index}] must be an object")
                 continue
+            if finding.get("metric") is not None and not isinstance(finding.get("metric"), str):
+                problems.append(f"findings[{index}].metric must be a string")
             for key in REQUIRED_FINDING:
                 if finding.get(key) in (None, ""):
                     problems.append(f"findings[{index}].{key} is required")
@@ -200,18 +226,18 @@ def render_markdown(data: dict) -> str:
     lines.append(f"**Tables audited:** {scope.get('tables_audited', '—')} · **Audit queries:** {scope.get('audit_queries', '—')}")
     lines.append("")
 
-    lines.append("## 1. Scope")
+    lines.append("## Scope")
     lines.append("")
     lines.append(f"- **Databases:** {_list(scope.get('databases')) or '—'}")
     lines.append(f"- **Accessible system tables:** {_list(scope.get('accessible')) or '—'}")
     lines.append("")
 
-    lines.append("## 2. Executive summary")
+    lines.append("## Executive summary")
     lines.append("")
     lines.append(data.get("summary", ""))
     lines.append("")
 
-    lines.append("## 3. Scorecard")
+    lines.append("## Scorecard")
     lines.append("")
     lines.append("| Area | Score | Weight |")
     lines.append("| --- | --- | --- |")
@@ -226,30 +252,77 @@ def render_markdown(data: dict) -> str:
         lines.append(f"| {label} | {scores.get(key, '—')} | {weight} |")
     lines.append("")
 
-    lines.append("## 4. Ranked findings")
+    lines.append("## Category detail")
     lines.append("")
     findings = data.get("findings", [])
-    if not findings:
-        lines.append("No findings. The audit did not collect enough evidence to support one.")
+    areas = data.get("areas") if isinstance(data.get("areas"), dict) else {}
+    for key, label in (
+        ("infrastructure", "Infrastructure"),
+        ("schema", "Schema"),
+        ("architecture", "Architecture"),
+        ("queries", "Queries"),
+        ("cost", "Cost efficiency"),
+    ):
+        status = scores.get(key, "—")
+        area_findings = [f for f in findings if str(f.get("area", "")).lower() == key]
+        note = areas.get(key) if isinstance(areas.get(key), dict) else {}
+        weight = "derived" if key == "cost" else weights.get(key, "—")
+        items = area_findings
+        if not items and key == "cost":
+            items = [
+                {
+                    "title": driver.get("driver", ""),
+                    "object": "",
+                    "metric": driver.get("monthly_impact", ""),
+                    "evidence": driver.get("evidence", ""),
+                    "fix": driver.get("fix", ""),
+                }
+                for driver in cost.get("drivers", [])
+            ]
+        plural = "" if len(items) == 1 else "s"
+        detail = (f"derived, {len(items)} driver{plural}" if key == "cost" else f"score {weight}, {len(items)} finding{plural}")
+        lines.append(f"### {label} — {status} ({detail})")
         lines.append("")
-    for index, finding in enumerate(findings, start=1):
-        lines.append(f"### {index}. {finding.get('title', '')} — {finding.get('severity', '')}")
+        summary = note.get("summary") or (
+            f"The audit found {len(items)} issue{plural} in this area."
+            if items else "No issues found in this area."
+        )
+        lines.append(f"**What we found.** {summary}")
+        checked = note.get("checked")
+        if isinstance(checked, list) and checked:
+            lines.append(f"Checked: {', '.join(str(c) for c in checked)}.")
         lines.append("")
-        lines.append(f"**Object:** `{finding.get('object', '')}`  ")
-        lines.append(f"**Rule:** `{finding.get('rule_id', '')}`  ")
-        lines.append(f"**Impact:** {finding.get('impact', '')} · **Confidence:** {finding.get('confidence', '')} · **Effort:** {finding.get('effort', '')}")
+        lines.append("**Issues**")
+        if items:
+            for finding in items:
+                metric = finding.get("metric") or finding.get("cost_note") or ""
+                suffix = f" — {metric}" if metric else ""
+                obj = f" (`{finding.get('object', '')}`)" if finding.get("object") else ""
+                lines.append(f"- **{finding.get('title', '')}**{obj}{suffix}")
+                if finding.get("evidence"):
+                    lines.append(f"  - Evidence: {finding['evidence']}")
+                if finding.get("false_positives"):
+                    lines.append(f"  - Not an issue if: {finding['false_positives']}")
+        else:
+            lines.append("- None.")
         lines.append("")
-        lines.append(f"**Evidence:** {finding.get('evidence', '')}")
+        lines.append("**Recommendations**")
+        if items:
+            for finding in items:
+                lines.append(f"- {finding.get('fix', '')}")
+        else:
+            lines.append("- No action required.")
         lines.append("")
-        lines.append(f"**Fix:** {finding.get('fix', '')}")
-        lines.append("")
-        if finding.get("cost_note"):
-            lines.append(f"**Cost impact:** {finding['cost_note']}")
+        impact = note.get("impact") or ("" if items else "No material savings identified.")
+        if not impact and key == "cost" and dollars.get("total_low") is not None:
+            impact = f"About ${_num(dollars.get('total_low'), 2)}–${_num(dollars.get('total_high'), 2)} per month."
+        if impact:
+            lines.append(f"**Impact if improved.** {impact}")
             lines.append("")
 
     precomp = data.get("precomputation", [])
     if precomp:
-        lines.append("## 5. Pre-computation opportunities")
+        lines.append("## Pre-computation opportunities")
         lines.append("")
         for item in precomp:
             lines.append(f"### {item.get('title', '')}")
@@ -264,7 +337,7 @@ def render_markdown(data: dict) -> str:
                 lines.append("```")
                 lines.append("")
 
-    lines.append("## 6. Cost drivers and savings")
+    lines.append("## Cost drivers and savings")
     lines.append("")
     lines.append("### Measured")
     lines.append("")
@@ -307,7 +380,7 @@ def render_markdown(data: dict) -> str:
 
     rewrites = data.get("rewrites", [])
     if rewrites:
-        lines.append("## 7. Top 3 rewrites")
+        lines.append("## Top rewrites")
         lines.append("")
         for rewrite in rewrites:
             lines.append(f"### {rewrite.get('rank', '')}. {rewrite.get('title', '')}")
@@ -333,7 +406,7 @@ def render_markdown(data: dict) -> str:
             lines.append(f"> {rewrite.get('review_note', 'Review before applying')}")
             lines.append("")
 
-    lines.append("## 8. Gaps")
+    lines.append("## Gaps")
     lines.append("")
     gaps = data.get("gaps", [])
     if gaps:
@@ -344,7 +417,7 @@ def render_markdown(data: dict) -> str:
     lines.append("")
 
     cta = data.get("cta", {})
-    lines.append("## 9. Next step")
+    lines.append("## Next step")
     lines.append("")
     lines.append(cta.get("text", "Want the full assessment? Brainforge can turn this audit into a scoped optimization plan."))
     lines.append("")

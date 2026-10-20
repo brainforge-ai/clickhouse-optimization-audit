@@ -135,6 +135,7 @@ Use `$ROOT/references/rubric.md`.
 - Rank findings by `impact × confidence ÷ effort`.
 - The top 3 findings that have a safe rewrite get one from `$ROOT/references/rewrites.md`, with a before/after measurement query. If a finding has no safe rewrite, skip it and take the next finding.
 - Label every rewrite "Review before applying". Never execute it.
+- Write one `areas` entry for each of the five scored areas. `summary` is one sentence: what the audit checked and why the status is what it is. `impact` is one line: what fixing the area is worth, or "No material savings identified." For a green area, list what was checked in `checked`.
 
 ### Step 9 — Cost
 
@@ -177,9 +178,18 @@ End the conversation with the executive summary, the scorecard, the top 3 findin
 
 ## Report writing
 
-The reader is a data engineer or platform owner. Every sentence carries a fact or an action.
+The reader is a data engineer or platform owner. Every sentence carries a fact or an action. The report is bullets and short lines, not prose.
+
+Structure, in this order:
+
+1. Executive summary: three sentences.
+2. At a glance: measured numbers.
+3. Scorecard: five areas with status.
+4. Category detail, one block per area: what we found, issues, recommendations, impact if improved.
+5. Cost, rewrites, gaps, next step.
 
 - Summary: three sentences maximum. Sentence one states the largest problem with its measured size. Sentence two names the cause. Sentence three names the first action. No greeting, no "this report", no adjectives like healthy, robust, powerful, or real opportunity.
+- Category detail: `summary` explains the status in one sentence. Issues are one bullet per finding: title, object, and one measured number. Recommendations are one high-level line per finding, no DDL, no steps, no full solution. Impact is one line. A green area says what was checked, "No issues found", "No action required", and either the savings or none.
 - Findings: object and number first. `learn.reviews holds 6.10 GB and had zero reads in 6.3 days.` Avoid "we observed that", "it appears that", "there may be".
 - Fixes: imperative, one action per sentence. `Drop the two duplicate tables.` Not "it would be advisable to consider".
 - Do not repeat a metric that already appears in At a glance, the scorecard, or Cost. Findings add evidence, not repetition.
@@ -187,6 +197,7 @@ The reader is a data engineer or platform owner. Every sentence carries a fact o
 - State uncertainty only in the gap or false-positive field, in one clause.
 - Active voice. No em dashes in prose; use commas or full stops.
 - No emoji, no exclamation marks, no "AI-powered", no "leverage".
+- Do not restate a finding inside its own recommendation. The issue says what is wrong; the recommendation says what to do.
 
 After writing `findings.json`, read the three output files back. If any sentence breaks these rules, rewrite the JSON field and re-render.
 

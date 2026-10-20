@@ -134,7 +134,8 @@ if example:
         if md_out.exists():
             rendered_md = md_out.read_text(encoding="utf-8")
             check("# ClickHouse Optimization Audit" in rendered_md, "rendered Markdown is missing the title")
-            check("## 4. Ranked findings" in rendered_md, "rendered Markdown is missing findings")
+            check("## Category detail" in rendered_md, "rendered Markdown is missing category detail")
+            check("### Infrastructure" in rendered_md, "rendered Markdown is missing area blocks")
 
 
 # --- Rule ID traceability ------------------------------------------------

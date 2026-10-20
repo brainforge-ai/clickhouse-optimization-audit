@@ -59,7 +59,8 @@
       "effort": "high",
       "confidence": "high",
       "cost_impact": "high",
-      "cost_note": "Accounts for about 1.9 TB/day of the 4.2 TB/day read volume."
+      "cost_note": "Accounts for about 1.9 TB/day of the 4.2 TB/day read volume.",
+      "metric": "12,204 granules read per query, 0 pruned"
     },
     {
       "id": "F2",
@@ -78,7 +79,8 @@
       "effort": "medium",
       "confidence": "high",
       "cost_impact": "high",
-      "cost_note": "1.8 TB removable at the pinned storage rate."
+      "cost_note": "1.8 TB removable at the pinned storage rate.",
+      "metric": "1.8 TB of 8.4 TB stored in unread tables"
     },
     {
       "id": "F3",
@@ -93,11 +95,12 @@
       "object": "default.events",
       "evidence": "Average 2,100 rows per insert, 4,200 inserts per day, 4,200 active parts and 18 concurrent merges at peak.",
       "impact": "high",
-      "fix": "Batch to 10k–100k rows or enable async inserts with wait_for_async_insert = 1.",
+      "fix": "Batch to 10k\u2013100k rows or enable async inserts with wait_for_async_insert = 1.",
       "effort": "low",
       "confidence": "high",
       "cost_impact": "medium",
-      "cost_note": "Reduces merge write amplification; no direct dollar saving at the current service shape."
+      "cost_note": "Reduces merge write amplification; no direct dollar saving at the current service shape.",
+      "metric": "4,200 parts/day, merge level 10"
     },
     {
       "id": "F4",
@@ -116,7 +119,8 @@
       "effort": "medium",
       "confidence": "high",
       "cost_impact": "high",
-      "cost_note": "Removes about 1.1 TB/day of repeated reads."
+      "cost_note": "Removes about 1.1 TB/day of repeated reads.",
+      "metric": "38 full scans/day, 1.9 TB read"
     },
     {
       "id": "F5",
@@ -136,7 +140,8 @@
       "effort": "medium",
       "confidence": "medium",
       "cost_impact": "medium",
-      "cost_note": "Estimated 0.6–1.2 TB storage reduction after backfill."
+      "cost_note": "Estimated 0.6\u20131.2 TB storage reduction after backfill.",
+      "metric": "910 GB across three columns"
     }
   ],
   "precomputation": [
@@ -248,7 +253,7 @@
         "finding_ids": [
           "F5"
         ],
-        "monthly_impact": "0.6–1.2 TB removed",
+        "monthly_impact": "0.6\u20131.2 TB removed",
         "fix": "Type + codec changes",
         "est_reduction_pct": 9,
         "confidence": "medium"
@@ -283,5 +288,34 @@
   "cta": {
     "text": "Want the full assessment? Brainforge can turn this audit into a scoped optimization plan with projected savings and a delivery sequence.",
     "url": "https://www.brainforge.ai/free-consultation-call"
+  },
+  "areas": {
+    "infrastructure": {
+      "summary": "Parts and merges are under control, but three large tables were never read in the window.",
+      "checked": [
+        "active parts per table",
+        "merge backlog",
+        "compression ratio",
+        "cache hit rate",
+        "service shape"
+      ],
+      "impact": "Removing the unread tables frees 1.8 TB, about 21% of compressed storage."
+    },
+    "schema": {
+      "summary": "The ordering key disagrees with the filters in the top patterns, and wide Nullable types inflate storage.",
+      "impact": "A new ordering key and tighter types cut read volume by roughly two thirds and storage by about 39%."
+    },
+    "architecture": {
+      "summary": "Ingestion sends small batches, so the service spends merge work it does not need.",
+      "impact": "Batching inserts cuts parts from 4,200 to under 300 per day."
+    },
+    "queries": {
+      "summary": "One daily rollup is recomputed from raw data 38 times a day.",
+      "impact": "A daily rollup replaces 38 scans with a 2 GB read, about 1.9 TB/day less."
+    },
+    "cost": {
+      "summary": "Most of the bill is storage for tables nobody reads, plus repeated scans.",
+      "impact": "About $81\u2013302 per month, depending on whether a service-shape change is approved."
+    }
   }
 }

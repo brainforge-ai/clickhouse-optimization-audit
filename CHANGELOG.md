@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 — 2026-10-21
+
+- New report structure: summary, at-a-glance, scorecard, then one block per category with what we found, issues, recommendations and impact if improved.
+- `findings.json` gains per-area notes (`summary`, `impact`, optional `checked`) and an optional `metric` per finding.
+- Cost efficiency lists cost drivers as issues when no finding is scored there.
+- Category blocks use plain-English bullets, no full solutions; rewrites stay in the appendix.
+
 ## 0.2.1 — 2026-10-21
 
 - Remove `defaultEnabled` from `plugin.json`. The marketplace entry still sets it, and older Claude Code builds (and the SDK) strip the manifest field as unknown.

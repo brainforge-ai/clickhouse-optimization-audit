@@ -96,7 +96,18 @@ Write exactly this shape. The HTML renderer reads it directly. `scope.window_day
     "queries": 6,
     "cost": 0
   },
-  "summary": "Three to four sentences. What is wasting the most, and what to fix first.",
+  "summary": "Three sentences. What is wasting the most, why, and the first action.",
+  "areas": {
+    "infrastructure": {
+      "summary": "One sentence on what the audit checked and why the status is what it is.",
+      "checked": ["active parts per table", "merge backlog", "service shape"],
+      "impact": "One line on what fixing the area is worth. Use No material savings identified for a green area with none."
+    },
+    "schema": {
+      "summary": "One sentence.",
+      "impact": "One line."
+    }
+  },
   "findings": [
     {
       "id": "F1",
@@ -106,6 +117,7 @@ Write exactly this shape. The HTML renderer reads it directly. `scope.window_day
       "severity": "CRITICAL",
       "title": "Ordering key leads with a UUID",
       "object": "default.events",
+      "metric": "12,204 granules read per query, 0 pruned",
       "evidence": "ORDER BY (event_id, ts); top 10 patterns prune 0 of 12,204 granules.",
       "impact": "high",
       "fix": "Reorder to (tenant_id, event_type, ts) in a new table, then backfill.",
@@ -191,6 +203,10 @@ Write exactly this shape. The HTML renderer reads it directly. `scope.window_day
   }
 }
 ```
+
+`areas` is required for every scored area. `summary` says what was checked and why the status is what it is, in one sentence. `impact` is one line, in plain English. `checked` is optional and is used for green areas, where it explains what the audit looked at.
+
+`metric` is the one measured number a reader needs for the finding, for example `8.20 GB of 10.73 GB unread`. Keep it short. The full evidence stays in `evidence`.
 
 Rules for the JSON:
 

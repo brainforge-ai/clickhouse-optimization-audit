@@ -257,8 +257,8 @@
     <div class="grid scores" id="scores"></div>
   </section>
   <section>
-    <h2>Findings</h2>
-    <div id="findings"></div>
+    <h2>Category detail</h2>
+    <div id="categories"></div>
   </section>
   <section id="precomp-section">
     <h2>Pre-computation opportunities</h2>
@@ -369,24 +369,64 @@
   }).join("");
 
   var findings = data.findings || [];
-  $("findings").innerHTML = findings.length ? findings.map(function (f, i) {
-    var sev = String(f.severity || "MEDIUM").toLowerCase();
-    return '<details class="finding sev-' + esc(sev) + '">' +
-      '<summary><span class="badge">' + esc(f.severity || "MEDIUM") + '</span>' +
-      '<span><span class="finding-title">' + esc(f.title) + '</span><span class="finding-object">' + esc(f.object) + ' · <code>' + esc(f.rule_id) + "</code></span></span>" +
-      '<span class="rank">#' + (i + 1) + "</span></summary>" +
-      '<div class="finding-body">' +
-      '<div class="fields">' +
-        '<div class="field"><div class="k">Impact</div><div class="v">' + esc(f.impact) + "</div></div>" +
-        '<div class="field"><div class="k">Confidence</div><div class="v">' + esc(f.confidence) + "</div></div>" +
-        '<div class="field"><div class="k">Effort</div><div class="v">' + esc(f.effort) + "</div></div>" +
-        '<div class="field"><div class="k">Cost impact</div><div class="v">' + esc(f.cost_impact) + "</div></div>" +
-      "</div>" +
-      '<div class="body-block"><div class="k">Evidence</div><div>' + esc(f.evidence) + "</div></div>" +
-      '<div class="body-block"><div class="k">Fix</div><div>' + esc(f.fix) + "</div></div>" +
-      (f.cost_note ? '<div class="body-block"><div class="k">Cost note</div><div>' + esc(f.cost_note) + "</div></div>" : "") +
-      "</div></details>";
-  }).join("") : '<p class="note">No findings. The audit did not collect enough evidence to support one.</p>';
+  var areaNotes = data.areas || {};
+  var areaMeta = [
+    ["infrastructure", "Infrastructure"],
+    ["schema", "Schema"],
+    ["architecture", "Architecture"],
+    ["queries", "Queries"],
+    ["cost", "Cost efficiency"]
+  ];
+
+  function findingsFor(key) {
+    return findings.filter(function (f) { return String(f.area || "").toLowerCase() === key; });
+  }
+
+  $("categories").innerHTML = areaMeta.map(function (a) {
+    var key = a[0], name = a[1];
+    var status = scores[key] || "—";
+    var cls = String(status).toLowerCase();
+    var fs = findingsFor(key);
+    var note = areaNotes[key] || {};
+    var items = fs.length ? fs : (key === "cost" ? (cost.drivers || []).map(function (d) {
+      return { title: d.driver, object: "", metric: d.monthly_impact, evidence: d.evidence, fix: d.fix };
+    }) : []);
+    var count = items.length;
+    var sub = key === "cost"
+      ? "derived from cost drivers · " + count + (count === 1 ? " driver" : " drivers")
+      : "score " + (weights[key] == null ? "—" : weights[key]) + " · " + count + (count === 1 ? " finding" : " findings");
+
+    var issues = items.map(function (f) {
+      var metric = f.metric || f.cost_note || "";
+      return "<li><b>" + esc(f.title) + "</b>" + (f.object ? " <code>" + esc(f.object) + "</code>" : "") +
+        (metric ? '<span class="issue-metric">' + esc(metric) + "</span>" : "") +
+        (f.evidence ? '<details class="evidence"><summary>Evidence</summary><p>' + esc(f.evidence) + "</p>" +
+        (f.false_positives ? '<p class="note"><b>Not an issue if:</b> ' + esc(f.false_positives) + "</p>" : "") +
+        "</details></li>" : "</li>");
+    }).join("");
+
+    var recs = items.map(function (f) {
+      return "<li>" + esc(f.fix || "") + "</li>";
+    }).join("");
+
+    var checked = Array.isArray(note.checked) && note.checked.length
+      ? '<ul class="chips">' + note.checked.map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("") + "</ul>"
+      : "";
+
+    var impact = note.impact || (count ? "" : "No material savings identified.");
+    if (!impact && key === "cost" && dollars.total_low != null) {
+      impact = "About $" + num(dollars.total_low) + "–$" + num(dollars.total_high) + " per month.";
+    }
+
+    return '<article class="category" style="border-left-color:' + (status === "Green" ? "var(--green)" : status === "Yellow" ? "var(--yellow)" : status === "Red" ? "var(--red)" : "var(--muted)") + '">' +
+      "<header><div><h3>" + esc(name) + '</h3><div class="cat-sub">' + esc(sub) + "</div></div>" +
+      '<span class="status ' + esc(cls) + '">' + esc(status) + "</span></header>" +
+      '<div class="cat-block"><h4>What we found</h4><p>' + esc(note.summary || (count ? "The audit found " + count + " issue(s) in this area." : "No issues found.")) + "</p>" + checked + "</div>" +
+      '<div class="cat-block"><h4>Issues</h4>' + (issues ? "<ul>" + issues + "</ul>" : '<p class="empty">No issues found.</p>') + "</div>" +
+      '<div class="cat-block"><h4>Recommendations</h4>' + (recs ? "<ul>" + recs + "</ul>" : '<p class="empty">No action required.</p>') + "</div>" +
+      (impact ? '<div class="cat-block cat-impact"><h4>Impact if improved</h4><p>' + esc(impact) + "</p></div>" : "") +
+      "</article>";
+  }).join("");
 
   var precomp = data.precomputation || [];
   if (!precomp.length) {
