@@ -368,7 +368,12 @@ def render_markdown(data: dict) -> str:
         lines.append(f"- Compute savings: **${_num(dollars['compute_monthly_savings'], 2)}/month**")
     else:
         lines.append("- Compute savings: **headroom only** — no service-shape change is claimed.")
-    lines.append(f"- Total estimate: **${_num(dollars.get('total_low'), 2)}–${_num(dollars.get('total_high'), 2)}/month**")
+    total_low = dollars.get("total_low")
+    total_high = dollars.get("total_high")
+    if total_low is not None and total_high is not None and total_low == total_high:
+        lines.append(f"- Total estimate: **${_num(total_low, 2)}/month**")
+    else:
+        lines.append(f"- Total estimate: **${_num(total_low, 2)}–${_num(total_high, 2)}/month**")
     lines.append("")
     lines.append(
         f"> Estimate based on published ClickHouse Cloud rates "

@@ -314,6 +314,16 @@
     if (Array.isArray(value)) return value.join(", ");
     return value == null ? "" : String(value);
   }
+  function size(tb, digits) {
+    if (tb == null || tb === "" || isNaN(Number(tb))) return "—";
+    var v = Number(tb);
+    if (v !== 0 && Math.abs(v) < 1) return (v * 1024).toFixed(digits == null ? 1 : digits) + " GB";
+    return v.toLocaleString(undefined, { maximumFractionDigits: digits == null ? 2 : digits }) + " TB";
+  }
+  function usd(value) {
+    if (value == null || value === "" || isNaN(Number(value))) return "—";
+    return "$" + Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   function num(value, digits) {
     if (value == null || value === "" || isNaN(Number(value))) return "—";
     return Number(value).toLocaleString(undefined, { maximumFractionDigits: digits == null ? 0 : digits });
@@ -393,7 +403,7 @@
     }) : []);
     var count = items.length;
     var sub = key === "cost"
-      ? "derived from cost drivers · " + count + (count === 1 ? " driver" : " drivers")
+      ? "derived · " + count + (fs.length ? (count === 1 ? " finding" : " findings") : (count === 1 ? " driver" : " drivers"))
       : "score " + (weights[key] == null ? "—" : weights[key]) + " · " + count + (count === 1 ? " finding" : " findings");
 
     var issues = items.map(function (f) {
@@ -442,21 +452,24 @@
 
   var money = [];
   if (dollars.storage_monthly_savings != null) {
-    money.push(["Storage savings", "$" + num(dollars.storage_monthly_savings) + "/mo", "Direct arithmetic on compressed bytes."]);
+    money.push(["Storage savings", usd(dollars.storage_monthly_savings) + "/mo", "Direct arithmetic on compressed bytes."]);
   }
   if (dollars.compute_monthly_savings != null) {
-    money.push(["Compute savings", "$" + num(dollars.compute_monthly_savings) + "/mo", "Requires the named service-shape change."]);
+    money.push(["Compute savings", usd(dollars.compute_monthly_savings) + "/mo", "Requires the named service-shape change."]);
   } else if (dollars.compute_requires_shape_change) {
     money.push(["Compute savings", "Headroom", "No service-shape change is justified, so no dollar saving is claimed."]);
   }
-  money.push(["Total estimate", "$" + num(dollars.total_low) + "–$" + num(dollars.total_high) + "/mo", "Low = storage only. High includes compute when supported."]);
+  var totalLabel = Number(dollars.total_low) === Number(dollars.total_high)
+    ? usd(dollars.total_low) + "/mo"
+    : usd(dollars.total_low) + "–" + usd(dollars.total_high) + "/mo";
+  money.push(["Total estimate", totalLabel, "Low = storage only. High includes compute when supported."]);
   $("money").innerHTML = money.map(function (m) {
     return '<div class="card"><div class="k">' + esc(m[0]) + "</div><strong>" + esc(m[1]) + "</strong><p>" + esc(m[2]) + "</p></div>";
   }).join("");
 
   var rows = [
-    ["Read volume", num(measured.read_tb_per_day, 2) + " TB/day", num(measured.read_tb_per_day_after, 2) + " TB/day (" + num(measured.read_reduction_pct) + "%)"],
-    ["Storage (compressed)", num(measured.storage_tb, 2) + " TB", num(measured.storage_tb_after, 2) + " TB (" + num(measured.storage_reduction_pct) + "%)"],
+    ["Read volume", size(measured.read_tb_per_day) + "/day", size(measured.read_tb_per_day_after) + "/day (" + num(measured.read_reduction_pct) + "%)"],
+    ["Storage (compressed)", size(measured.storage_tb), size(measured.storage_tb_after) + " (" + num(measured.storage_reduction_pct) + "%)"],
     ["Parts created", num(measured.parts_per_day) + "/day", "—"],
     ["Cache hit rate", num(measured.cache_hit_pct, 1) + "%", "target " + num(measured.cache_target_pct, 1) + "%"]
   ];
@@ -516,8 +529,8 @@
   $("hero-cta").href = ctaUrl;
 
   var kpi = [];
-  if (measured.storage_tb != null) kpi.push(["Storage", num(measured.storage_tb, 2) + " TB", "compressed"]);
-  if (measured.read_tb_per_day != null) kpi.push(["Read volume", num(measured.read_tb_per_day, 2) + " TB/day", "user queries"]);
+  if (measured.storage_tb != null) kpi.push(["Storage", size(measured.storage_tb), "compressed"]);
+  if (measured.read_tb_per_day != null) kpi.push(["Read volume", size(measured.read_tb_per_day) + "/day", "user queries"]);
   if (measured.parts_per_day != null) kpi.push(["Parts created", num(measured.parts_per_day) + "/day", "all tables"]);
   if (measured.cache_hit_pct != null) kpi.push(["Cache hit", num(measured.cache_hit_pct, 1) + "%", "target " + num(measured.cache_target_pct, 1) + "%"]);
   kpi.push(["Findings", String((data.findings || []).length), (data.findings || []).filter(function (f) { return f.severity === "CRITICAL"; }).length + " critical"]);
