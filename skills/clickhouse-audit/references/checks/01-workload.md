@@ -1,6 +1,6 @@
 # Workload profile (pass 2)
 
-Default window: 7 days. Replace `7` with the user's choice (`1`, `30`, or a custom number of days). For full history, drop the time predicate or start from the oldest retained `event_time`, and state the actual range in the report. Always read through `clusterAllReplicas('default', system.query_log)` when the cluster exists.
+Default window: 7 days. Replace `7` with the user's choice (`1`, `30`, or a custom number of days). For full history, drop the time predicate or start from the oldest retained `event_time`, and state the actual range in the report. Always read through `clusterAllReplicas('<cluster>', system.query_log)` when the cluster exists. Take `<cluster>` from the inventory (`system.clusters`). If no cluster is reported, drop the wrapper and record a partial-workload gap.
 
 Every query excludes the audit's own statements with `query NOT LIKE '%bf_audit%'`.
 
@@ -18,7 +18,7 @@ SELECT
   round(avg(query_duration_ms), 1) AS avg_ms,
   round(quantile(0.95)(query_duration_ms), 1) AS p95_ms,
   max(memory_usage) AS max_memory_bytes
-FROM clusterAllReplicas('default', system.query_log)
+FROM clusterAllReplicas('<cluster>', system.query_log)
 WHERE event_date >= today() - 7
   AND event_time >= now() - INTERVAL 7 DAY
   AND type = 'QueryFinish'
@@ -48,7 +48,7 @@ SELECT
   count() AS reads,
   sum(read_bytes) AS read_bytes,
   sum(read_rows) AS read_rows
-FROM clusterAllReplicas('default', system.query_log)
+FROM clusterAllReplicas('<cluster>', system.query_log)
 WHERE event_date >= today() - 7
   AND event_time >= now() - INTERVAL 7 DAY
   AND type = 'QueryFinish'
@@ -76,7 +76,7 @@ SELECT
 FROM system.tables AS t
 LEFT JOIN (
   SELECT arrayJoin(tables) AS tbl, max(event_time) AS last_read
-  FROM clusterAllReplicas('default', system.query_log)
+  FROM clusterAllReplicas('<cluster>', system.query_log)
   WHERE event_date >= today() - 7
     AND event_time >= now() - INTERVAL 7 DAY
     AND type = 'QueryFinish'
@@ -90,7 +90,27 @@ WHERE t.database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '
   AND t.engine NOT IN ('View', 'MaterializedView', 'LiveView', 'WindowView')
   AND (q.last_read IS NULL OR q.last_read < now() - INTERVAL 7 DAY)
 ORDER BY t.total_bytes DESC
-LIMIT 50
+LIMIT 5000
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+This returns every unread table, not a sample. Add the totals in SQL so the report quotes one measured number:
+
+```sql
+/* bf_audit */
+SELECT count() AS unread_tables, sum(t.total_bytes) AS unread_bytes, sum(t.total_rows) AS unread_rows
+FROM system.tables AS t
+LEFT JOIN (
+  SELECT arrayJoin(tables) AS tbl
+  FROM clusterAllReplicas('<cluster>', system.query_log)
+  WHERE event_date >= today() - 7 AND event_time >= now() - INTERVAL 7 DAY
+    AND type = 'QueryFinish' AND is_initial_query = 1 AND query_kind = 'Select'
+    AND query NOT LIKE '%bf_audit%' AND notEmpty(tables)
+  GROUP BY tbl
+) AS q ON concat(t.database, '.', t.name) = q.tbl
+WHERE t.database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '_temporary_and_external_tables')
+  AND t.engine NOT IN ('View', 'MaterializedView', 'LiveView', 'WindowView')
+  AND q.tbl IS NULL
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 
@@ -107,7 +127,7 @@ SELECT
   round(avg(written_rows), 0) AS avg_rows_per_insert,
   max(written_rows) AS max_rows_per_insert,
   sum(written_bytes) AS bytes_written
-FROM clusterAllReplicas('default', system.query_log)
+FROM clusterAllReplicas('<cluster>', system.query_log)
 WHERE event_date >= today() - 7
   AND event_time >= now() - INTERVAL 7 DAY
   AND type = 'QueryFinish'
@@ -127,7 +147,7 @@ SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 SELECT
   toStartOfMinute(event_time) AS minute,
   count() AS queries
-FROM clusterAllReplicas('default', system.query_log)
+FROM clusterAllReplicas('<cluster>', system.query_log)
 WHERE event_date >= today() - 7
   AND event_time >= now() - INTERVAL 7 DAY
   AND type = 'QueryFinish'
@@ -149,7 +169,7 @@ SELECT
   sum(read_rows) AS read_rows,
   sum(result_rows) AS result_rows,
   round(sum(read_rows) / greatest(sum(result_rows), 1), 1) AS read_per_result
-FROM clusterAllReplicas('default', system.query_log)
+FROM clusterAllReplicas('<cluster>', system.query_log)
 WHERE event_date >= today() - 7
   AND event_time >= now() - INTERVAL 7 DAY
   AND type = 'QueryFinish'
@@ -177,7 +197,7 @@ SELECT
     greatest(sum(ProfileEvents['CachedReadBufferReadFromCacheBytes']) +
              sum(ProfileEvents['CachedReadBufferReadFromSourceBytes']), 1) * 100, 1
   ) AS cache_hit_pct
-FROM clusterAllReplicas('default', system.query_log)
+FROM clusterAllReplicas('<cluster>', system.query_log)
 WHERE event_date >= today() - 7
   AND event_time >= now() - INTERVAL 7 DAY
   AND type = 'QueryFinish'
@@ -238,7 +258,7 @@ SELECT
   max(q) AS peak_queries_per_minute
 FROM (
   SELECT toStartOfMinute(event_time) AS minute, count() AS q
-  FROM clusterAllReplicas('default', system.query_log)
+  FROM clusterAllReplicas('<cluster>', system.query_log)
   WHERE event_date >= today() - 7
     AND event_time >= now() - INTERVAL 7 DAY
     AND type = 'QueryFinish'

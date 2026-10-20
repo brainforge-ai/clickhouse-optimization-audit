@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-10-21
+
+- Audit scope is the full service by default: every user database, table and column. Lists are paged until they match preflight counts.
+- Added a preflight step: table, column and part counts plus `log_queries`, run before any analysis.
+- Cluster name is read from `system.clusters` and substituted into every `clusterAllReplicas` call instead of being hardcoded.
+- Numbers rule: every figure must come from a query in the run; no estimates and no derived percentages without both inputs.
+- Added `checks_not_run`. A check that could not run blocks a Green score for its area and appears in the gaps.
+
 ## 0.3.0 — 2026-10-21
 
 - New report structure: summary, at-a-glance, scorecard, then one block per category with what we found, issues, recommendations and impact if improved.

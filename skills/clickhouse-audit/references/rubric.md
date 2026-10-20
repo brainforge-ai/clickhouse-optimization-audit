@@ -190,6 +190,13 @@ Write exactly this shape. The HTML renderer reads it directly. `scope.window_day
       "excluded": ["backups", "egress", "ClickPipes"]
     }
   },
+  "checks_not_run": [
+    {
+      "area": "Queries",
+      "check": "query-pruning",
+      "why": "EXPLAIN rejected by the MCP; pruning proxy used instead."
+    }
+  ],
   "gaps": [
     {
       "area": "Queries",
@@ -212,6 +219,7 @@ Rules for the JSON:
 
 - `dollars.compute_monthly_savings` is `null` unless a service-shape change is named.
 - `cost.total_low` and `total_high` are the bounds of the estimate. If only storage is claimed, they are equal.
-- `gaps` is required, even when empty.
+- `checks_not_run` is required, even when empty. An area with any entry cannot score Green.
+- `gaps` is required, even when empty. Each gap states what is missing and the consequence for the score.
 - `scores.cost` is derived as above; `score_weights.cost` is `0`.
 - Every finding has a `rule_id`. If a finding comes from the Playbook rather than a vendored rule, use a `playbook:` or `architecture-advisor:` prefix.

@@ -317,5 +317,6 @@
       "summary": "Most of the bill is storage for tables nobody reads, plus repeated scans.",
       "impact": "About $81\u2013302 per month, depending on whether a service-shape change is approved."
     }
-  }
+  },
+  "checks_not_run": []
 }

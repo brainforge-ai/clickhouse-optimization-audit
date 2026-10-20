@@ -99,6 +99,18 @@ def validate(data: dict) -> list[str]:
                 ):
                     problems.append(f"areas.{key}.checked must be an array of strings")
 
+    not_run = data.get("checks_not_run")
+    if not isinstance(not_run, list):
+        problems.append("checks_not_run is required (use [] when every check ran)")
+    else:
+        for index, item in enumerate(not_run):
+            if not isinstance(item, dict):
+                problems.append(f"checks_not_run[{index}] must be an object")
+                continue
+            for key in ("area", "check", "why"):
+                if not isinstance(item.get(key), str) or not item.get(key).strip():
+                    problems.append(f"checks_not_run[{index}].{key} must be a non-empty string")
+
     findings = data.get("findings")
     if not isinstance(findings, list):
         problems.append("findings must be an array")
@@ -413,6 +425,14 @@ def render_markdown(data: dict) -> str:
 
     lines.append("## Gaps")
     lines.append("")
+    not_run = data.get("checks_not_run", [])
+    if not_run:
+        lines.append("**Checks that did not run**")
+        lines.append("")
+        for item in not_run:
+            lines.append(f"- {item.get('area', '')}: `{item.get('check', '')}` — {item.get('why', '')}")
+        lines.append("")
+
     gaps = data.get("gaps", [])
     if gaps:
         for gap in gaps:

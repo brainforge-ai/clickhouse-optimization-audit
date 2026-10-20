@@ -595,9 +595,13 @@
   }).join("") || '<p class="note">No safe rewrite was available for the top findings.</p>';
 
   var gaps = data.gaps || [];
-  $("gaps").innerHTML = gaps.length ? gaps.map(function (g) {
+  var notRun = data.checks_not_run || [];
+  var gapItems = notRun.map(function (g) {
+    return "<li><b>" + esc(g.area) + ": check " + esc(g.check) + " did not run.</b> " + esc(g.why) + "</li>";
+  }).concat(gaps.map(function (g) {
     return "<li><b>" + esc(g.area) + ":</b> " + esc(g.gap) + " — " + esc(g.why) + "</li>";
-  }).join("") : "<li>No gaps. All checks ran with the permissions available.</li>";
+  }));
+  $("gaps").innerHTML = gapItems.length ? gapItems.join("") : "<li>No gaps. All checks ran with the permissions available.</li>";
 
   var cta = data.cta || {};
   var ctaUrl = cta.url || "https://www.brainforge.ai/free-consultation-call";

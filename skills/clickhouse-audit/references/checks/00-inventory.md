@@ -2,6 +2,34 @@
 
 Metadata only. No user rows. Run in this order and keep the results for the analysis.
 
+**Scope is the full service.** Every user database, table and column is in scope. Do not sample.
+
+**Completeness rule.** Every list query below is a page, not a sample. Read the preflight counts first, then page with a keyset filter until your rows match the counts. If any page fails or a count cannot be reconciled, record a gap. A partial inventory is never a clean pass.
+
+## 0. Preflight counts (run first)
+
+```sql
+/* bf_audit */
+SELECT
+  (SELECT count() FROM system.tables
+     WHERE database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '_temporary_and_external_tables')) AS tables,
+  (SELECT count() FROM system.columns
+     WHERE database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '_temporary_and_external_tables')) AS columns,
+  (SELECT count() FROM system.parts
+     WHERE active AND database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '_temporary_and_external_tables')) AS parts
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+```sql
+/* bf_audit */
+SELECT name, value FROM system.settings WHERE name = 'log_queries'
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+Record the three counts. They are the expected row counts for sections 3, 4 and 5. If `log_queries` is `0`, the workload profile cannot run; stop and report that as the finding, not as a clean service.
+
+If the MCP accepts `SHOW GRANTS`, run it and record the role. A read-only role is expected.
+
 ## 1. Version, timezone, host
 
 ```sql
@@ -21,7 +49,7 @@ LIMIT 50
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 
-If the result has a `default` cluster, read `system.query_log` through `clusterAllReplicas('default', system.query_log)`. Otherwise use `system.query_log` and record a partial-workload gap.
+Record the cluster name as `<cluster>`. Every workload query substitutes it into `clusterAllReplicas('<cluster>', system.query_log)`. If the list is empty, read `system.query_log` directly and record a partial-workload gap.
 
 ## 3. Tables
 
@@ -43,9 +71,11 @@ SELECT
 FROM system.tables
 WHERE database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '_temporary_and_external_tables')
 ORDER BY total_bytes DESC
-LIMIT 300
+LIMIT 5000
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
+
+If the rows equal the preflight table count, the list is complete. If it equals the limit, page with `AND (database, name) > ('<last_database>', '<last_name>')` until the count matches. Never treat a capped list as the inventory.
 
 ## 4. Columns
 
@@ -67,11 +97,11 @@ SELECT
 FROM system.columns
 WHERE database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '_temporary_and_external_tables')
 ORDER BY database, table, position
-LIMIT 3000
+LIMIT 20000
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 
-If the result is larger than the context can hold, rerun filtered to the 20 largest tables by `total_bytes` from query 3.
+Compare the row count with the preflight column count. If it is short, page by database: `AND database = '<db>'` for each database, then by table. If the result is too large for context, keep per-table aggregates (nullable count, type classes) and fetch individual columns only for tables that produce findings. Record which tables were aggregated instead of listed.
 
 ## 5. Active parts
 
@@ -91,7 +121,7 @@ WHERE active
   AND database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA', '_temporary_and_external_tables')
 GROUP BY database, table
 ORDER BY bytes_on_disk DESC
-LIMIT 300
+LIMIT 5000
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 
@@ -120,7 +150,7 @@ SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 /* bf_audit */
 SELECT database, table, name, type, expr, granularity
 FROM system.data_skipping_indices
-LIMIT 300
+LIMIT 5000
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 
@@ -130,7 +160,7 @@ SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 /* bf_audit */
 SELECT database, table, name, type
 FROM system.projections
-LIMIT 300
+LIMIT 5000
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 

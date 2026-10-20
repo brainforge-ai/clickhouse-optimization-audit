@@ -34,6 +34,8 @@ Read these before the first tool call. They are not negotiable.
 - **No network calls** other than the ClickHouse MCP server. No telemetry.
 - **Redact literals** (strings, numbers, emails, IDs) from every query shown in a report. Replace with `?`.
 - **No evidence, no finding.** Every finding must cite a query result.
+- **Full service, not a sample.** Every user database, table and column is in scope. Lists are paged until they match the preflight counts, never truncated.
+- **Real numbers only.** Every figure in the report comes from a query in this run. Do not compute a percentage unless both numbers are in the run. Do not estimate storage, reads, memory or cost. If a number is missing, say so in the gaps.
 - **State gaps.** Missing permissions, short retention, disabled logs, and unavailable metrics are listed, never silently skipped.
 - **One report design.** The HTML report is produced only by rendering `findings.json` through the bundled template. Never hand-write HTML, restyle the report, or invent a second JSON shape. If the renderer fails, stop and report the error.
 - **Plain engineering prose.** The report reads like an engineer wrote it for another engineer. No marketing language, no filler, no restating the same number in three places.
@@ -72,6 +74,7 @@ Keep `organizationId` and `serviceId` for the rest of the run. Pass `serviceId` 
 ### Step 3 — State scope and get one confirmation
 
 Before the first query, tell the user:
+- Scope: the full service. All user databases, tables and columns.
 - Service name and tier.
 - Window: 7 days by default. Offer 1, 7, 30, a custom number of days, or full history (everything the service retains).
 - If the service retains less than the requested window, use the shorter available range and state the actual start and end in the report.
@@ -81,9 +84,13 @@ Before the first query, tell the user:
 
 Ask **once**: "Proceed?" Do not ask again during the run.
 
-### Step 4 — Inventory (pass 1)
+### Step 4 — Preflight and inventory (pass 1)
 
-Follow `$ROOT/references/checks/00-inventory.md`. Collect:
+Run the preflight counts first (`00-inventory.md` section 0): tables, columns, active parts, and `log_queries`. These counts are the completeness budget for every list that follows.
+
+If `log_queries` is `0`, stop the workload profile and report it as the finding.
+
+Then collect:
 - Version, timezone, cluster name.
 - Databases and tables (metadata).
 - Engines, sorting/primary/partition keys, TTL presence, views and MVs.
@@ -91,7 +98,9 @@ Follow `$ROOT/references/checks/00-inventory.md`. Collect:
 - Active parts, partitions, merge backlog.
 - Skipping indices and projections where available.
 
-Resolve the log source once: `system.clusters` tells you whether `clusterAllReplicas('default', ...)` works. If it does, use it for every `system.query_log` read so all replicas are covered. If not, use `system.query_log` and record a gap.
+Resolve the log source once. Read the cluster name from `system.clusters` and record it as `<cluster>`. Every `system.query_log` read uses `clusterAllReplicas('<cluster>', system.query_log)` so all replicas are covered. If the list is empty, read `system.query_log` and record a gap.
+
+Reconcile each list with its preflight count. If a list is short, page it. If a page fails, record the gap; never present a partial list as complete.
 
 ### Step 5 — Workload profile (pass 2)
 
@@ -111,7 +120,9 @@ Follow `$ROOT/references/checks/02-deep-dive.md`. Take the top 3 patterns and ru
 
 ### Step 7 — Analyze
 
-Load the check files that match the evidence you collected. Each check file lists its rule IDs, evidence, trigger threshold, false positives, fix and effort. Run only checks whose evidence exists; skip the rest and say why.
+Load every check file for every area. Each check file lists its rule IDs, evidence, trigger threshold, false positives, fix and effort. Run the check against the evidence you collected.
+
+A check you cannot evaluate is not a pass. Add it to `checks_not_run` with the reason, and the area it belongs to cannot score Green.
 
 Areas and files:
 
