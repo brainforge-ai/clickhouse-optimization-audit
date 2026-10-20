@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 — 2026-10-21
+
+- Stale-table detection: last read time per table across the full log retention, with thresholds for never read, 90+ days and 30 to 90 days.
+- Duplicate-table detection: exact copies by rows, bytes and sorting key, plus same-shape tables under a different key.
+- Grain mismatch detection: repeated GROUP BY on a base table when an aggregate table, materialized view or projection already covers the grain.
+- Schema redundancy check: duplicate columns and raw/parsed pairs.
+
 ## 0.5.0 — 2026-10-21
 
 - The renderer now validates the arithmetic: area weights and scores, storage and read reduction percentages, dollar totals and rank scores. Impossible figures fail the run.

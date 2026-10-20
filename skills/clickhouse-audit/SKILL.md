@@ -129,11 +129,11 @@ Areas and files:
 | Area | Files |
 | --- | --- |
 | Infrastructure | `$ROOT/references/checks/infra-parts.md`, `$ROOT/references/checks/infra-merges.md`, `$ROOT/references/checks/infra-compression.md`, `$ROOT/references/checks/infra-cache.md`, `$ROOT/references/checks/infra-service-shape.md`, `$ROOT/references/checks/infra-errors.md`, `$ROOT/references/checks/infra-replication.md`, `$ROOT/references/checks/infra-disk.md` |
-| Schema | `$ROOT/references/checks/schema-order-by.md`, `$ROOT/references/checks/schema-types.md`, `$ROOT/references/checks/schema-partitioning.md`, `$ROOT/references/checks/schema-json.md`, `$ROOT/references/checks/schema-codecs.md`, `$ROOT/references/checks/schema-skip-indexes.md`, `$ROOT/references/checks/schema-mv-refresh.md` |
-| Architecture | `$ROOT/references/checks/architecture-ingestion.md`, `$ROOT/references/checks/architecture-engines.md`, `$ROOT/references/checks/architecture-joins.md`, `$ROOT/references/checks/architecture-workloads.md`, `$ROOT/references/checks/architecture-dictionaries.md` |
-| Queries | `$ROOT/references/checks/query-pruning.md`, `$ROOT/references/checks/query-patterns.md`, `$ROOT/references/checks/query-joins.md` |
+| Schema | `$ROOT/references/checks/schema-order-by.md`, `$ROOT/references/checks/schema-types.md`, `$ROOT/references/checks/schema-partitioning.md`, `$ROOT/references/checks/schema-json.md`, `$ROOT/references/checks/schema-codecs.md`, `$ROOT/references/checks/schema-skip-indexes.md`, `$ROOT/references/checks/schema-mv-refresh.md`, `$ROOT/references/checks/schema-redundancy.md` |
+| Architecture | `$ROOT/references/checks/architecture-ingestion.md`, `$ROOT/references/checks/architecture-engines.md`, `$ROOT/references/checks/architecture-joins.md`, `$ROOT/references/checks/architecture-workloads.md`, `$ROOT/references/checks/architecture-dictionaries.md`, `$ROOT/references/checks/architecture-duplicates.md` |
+| Queries | `$ROOT/references/checks/query-pruning.md`, `$ROOT/references/checks/query-patterns.md`, `$ROOT/references/checks/query-joins.md`, `$ROOT/references/checks/query-grain-mismatch.md` |
 | Pre-computation | `$ROOT/references/checks/precomputation-mv.md`, `$ROOT/references/checks/precomputation-projections.md` |
-| Cost | `$ROOT/references/checks/cost-storage.md`, `$ROOT/references/checks/cost-compute.md` |
+| Cost | `$ROOT/references/checks/cost-storage.md`, `$ROOT/references/checks/cost-compute.md`, `$ROOT/references/checks/cost-unused-tables.md` |
 
 Cross-check reasoning against the vendored rules under `$ROOT/references/vendor/clickhouse/`. Cite the rule ID, not the vendor file name.
 
