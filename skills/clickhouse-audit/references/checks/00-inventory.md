@@ -39,6 +39,27 @@ LIMIT 1
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 
+## 1b. Log coverage
+
+```sql
+/* bf_audit */
+SELECT
+  min(event_time) AS first_query,
+  max(event_time) AS last_query,
+  count() AS rows
+FROM system.query_log
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+```sql
+/* bf_audit */
+SELECT min(event_time) AS first_part_event, max(event_time) AS last_part_event
+FROM system.part_log
+SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
+```
+
+Set `scope.window_start` and `scope.window_end` from the measured query_log range. When the requested window is longer than the log, report the measured range and the shortfall in the gaps. Never state a window the log cannot support.
+
 ## 2. Cluster name (decides the query_log source)
 
 ```sql

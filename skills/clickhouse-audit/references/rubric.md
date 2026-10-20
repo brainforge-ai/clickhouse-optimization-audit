@@ -149,6 +149,7 @@ Write exactly this shape. The HTML renderer reads it directly. `scope.window_day
       "why": "Aligns the key with the filters used by 8 of the top 10 patterns.",
       "expected_effect": "Cuts granules read on the heaviest pattern from 12,204 to under 400.",
       "measure": "EXPLAIN indexes = 1 <query> before and after the backfill.",
+      "basis": "system.columns for default.events",
       "review_note": "Review before applying"
     }
   ],

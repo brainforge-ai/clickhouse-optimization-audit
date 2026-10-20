@@ -161,6 +161,86 @@ def validate(data: dict) -> list[str]:
     if not isinstance(data.get("cta"), dict):
         problems.append("cta must be an object")
 
+    # --- arithmetic and scoring consistency ---
+    weights = data.get("score_weights") if isinstance(data.get("score_weights"), dict) else {}
+    findings = data.get("findings") if isinstance(data.get("findings"), list) else []
+    severity_weight = {"CRITICAL": 3, "HIGH": 2, "MEDIUM": 1}
+    area_findings = {area: [] for area in AREAS}
+    seen_ids = set()
+    for finding in findings:
+        area = str(finding.get("area", "")).lower()
+        if area in area_findings:
+            area_findings[area].append(finding)
+        finding_id = finding.get("id")
+        if finding_id in seen_ids:
+            problems.append(f"duplicate finding id: {finding_id}")
+        seen_ids.add(finding_id)
+
+    for area in AREAS:
+        total = sum(severity_weight.get(str(f.get("severity", "")).upper(), 0) for f in area_findings[area])
+        if area != "cost" and isinstance(weights.get(area), int) and weights[area] != total:
+            problems.append(f"score_weights.{area} is {weights[area]} but its findings sum to {total}")
+        if area == "cost":
+            continue
+        expected = "Red" if any(str(f.get("severity", "")).upper() == "CRITICAL" for f in area_findings[area]) or total >= 6 else ("Yellow" if total >= 2 else "Green")
+        if scores.get(area) != expected:
+            problems.append(f"scores.{area} is {scores.get(area)} but the rubric gives {expected} from weight {total}")
+
+    cost = data.get("cost") if isinstance(data.get("cost"), dict) else {}
+    measured = cost.get("measured") if isinstance(cost.get("measured"), dict) else {}
+    storage_pct = measured.get("storage_reduction_pct")
+    read_pct = measured.get("read_reduction_pct")
+    if isinstance(storage_pct, (int, float)) or isinstance(read_pct, (int, float)):
+        s_pct = storage_pct if isinstance(storage_pct, (int, float)) else 0
+        r_pct = read_pct if isinstance(read_pct, (int, float)) else 0
+        expected_cost = "Red" if (s_pct > 20 or r_pct > 30) else ("Yellow" if (10 <= s_pct <= 20 or 15 <= r_pct <= 30) else "Green")
+        if scores.get("cost") != expected_cost:
+            problems.append(f"scores.cost is {scores.get('cost')} but measured reductions give {expected_cost}")
+
+    for label, before_key, after_key, pct_key in (
+        ("storage", "storage_tb", "storage_tb_after", "storage_reduction_pct"),
+        ("read", "read_tb_per_day", "read_tb_per_day_after", "read_reduction_pct"),
+    ):
+        before = measured.get(before_key)
+        after = measured.get(after_key)
+        claimed = measured.get(pct_key)
+        if isinstance(before, (int, float)) and isinstance(after, (int, float)) and isinstance(claimed, (int, float)) and before:
+            calculated = (before - after) / before * 100
+            if abs(calculated - claimed) > 1.0:
+                problems.append(f"measured.{pct_key} is {claimed} but {before_key} and {after_key} give {round(calculated, 1)}")
+
+    dollars = cost.get("dollars") if isinstance(cost.get("dollars"), dict) else {}
+    storage_savings = dollars.get("storage_monthly_savings")
+    compute_savings = dollars.get("compute_monthly_savings")
+    total_low = dollars.get("total_low")
+    total_high = dollars.get("total_high")
+    if isinstance(storage_savings, (int, float)) and isinstance(total_low, (int, float)) and compute_savings is None:
+        if abs(total_low - storage_savings) > 0.01:
+            problems.append("dollars.total_low must equal storage savings when compute savings are null")
+    if compute_savings is None and isinstance(total_low, (int, float)) and isinstance(total_high, (int, float)) and abs(total_high - total_low) > 0.01:
+        problems.append("dollars.total_low and total_high must match when compute savings are null")
+    if isinstance(total_low, (int, float)) and isinstance(total_high, (int, float)) and total_high < total_low:
+        problems.append("dollars.total_high is below total_low")
+
+    level = {"high": 3, "medium": 2, "low": 1}
+    for finding in findings:
+        claimed_rank = finding.get("rank_score")
+        if isinstance(claimed_rank, (int, float)):
+            impact = level.get(str(finding.get("impact", "")).lower(), 0)
+            confidence = level.get(str(finding.get("confidence", "")).lower(), 0)
+            effort = level.get(str(finding.get("effort", "")).lower(), 0) or 1
+            calculated_rank = impact * confidence / effort
+            if abs(calculated_rank - claimed_rank) > 0.01:
+                problems.append(f"finding {finding.get('id')}: rank_score is {claimed_rank} but impact x confidence / effort gives {round(calculated_rank, 2)}")
+
+    known_ids = {finding.get("id") for finding in findings}
+    for index, rewrite in enumerate(data.get("rewrites") or []):
+        finding_id = rewrite.get("finding_id") if isinstance(rewrite, dict) else None
+        if finding_id and finding_id not in known_ids:
+            problems.append(f"rewrites[{index}].finding_id {finding_id} is not in findings")
+        if isinstance(rewrite, dict) and "CREATE TABLE" in str(rewrite.get("after", "")).upper() and not rewrite.get("basis"):
+            problems.append(f"rewrites[{index}] creates a table but has no basis; add basis such as system.columns for db.table")
+
     return problems
 
 

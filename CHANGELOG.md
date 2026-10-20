@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 — 2026-10-21
+
+- The renderer now validates the arithmetic: area weights and scores, storage and read reduction percentages, dollar totals and rank scores. Impossible figures fail the run.
+- New checks: query errors, replication health, disk headroom, dictionary health and refreshable materialized view freshness.
+- New log coverage probe records the real `query_log` range and is used as the report window.
+- Rewrites that create a table must name their `basis` (the `system.columns` read they came from); DDL from memory is rejected.
+
 ## 0.4.0 — 2026-10-21
 
 - Audit scope is the full service by default: every user database, table and column. Lists are paged until they match preflight counts.

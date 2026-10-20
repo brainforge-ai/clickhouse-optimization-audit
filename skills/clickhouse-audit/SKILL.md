@@ -128,9 +128,9 @@ Areas and files:
 
 | Area | Files |
 | --- | --- |
-| Infrastructure | `$ROOT/references/checks/infra-parts.md`, `$ROOT/references/checks/infra-merges.md`, `$ROOT/references/checks/infra-compression.md`, `$ROOT/references/checks/infra-cache.md`, `$ROOT/references/checks/infra-service-shape.md` |
-| Schema | `$ROOT/references/checks/schema-order-by.md`, `$ROOT/references/checks/schema-types.md`, `$ROOT/references/checks/schema-partitioning.md`, `$ROOT/references/checks/schema-json.md`, `$ROOT/references/checks/schema-codecs.md`, `$ROOT/references/checks/schema-skip-indexes.md` |
-| Architecture | `$ROOT/references/checks/architecture-ingestion.md`, `$ROOT/references/checks/architecture-engines.md`, `$ROOT/references/checks/architecture-joins.md`, `$ROOT/references/checks/architecture-workloads.md` |
+| Infrastructure | `$ROOT/references/checks/infra-parts.md`, `$ROOT/references/checks/infra-merges.md`, `$ROOT/references/checks/infra-compression.md`, `$ROOT/references/checks/infra-cache.md`, `$ROOT/references/checks/infra-service-shape.md`, `$ROOT/references/checks/infra-errors.md`, `$ROOT/references/checks/infra-replication.md`, `$ROOT/references/checks/infra-disk.md` |
+| Schema | `$ROOT/references/checks/schema-order-by.md`, `$ROOT/references/checks/schema-types.md`, `$ROOT/references/checks/schema-partitioning.md`, `$ROOT/references/checks/schema-json.md`, `$ROOT/references/checks/schema-codecs.md`, `$ROOT/references/checks/schema-skip-indexes.md`, `$ROOT/references/checks/schema-mv-refresh.md` |
+| Architecture | `$ROOT/references/checks/architecture-ingestion.md`, `$ROOT/references/checks/architecture-engines.md`, `$ROOT/references/checks/architecture-joins.md`, `$ROOT/references/checks/architecture-workloads.md`, `$ROOT/references/checks/architecture-dictionaries.md` |
 | Queries | `$ROOT/references/checks/query-pruning.md`, `$ROOT/references/checks/query-patterns.md`, `$ROOT/references/checks/query-joins.md` |
 | Pre-computation | `$ROOT/references/checks/precomputation-mv.md`, `$ROOT/references/checks/precomputation-projections.md` |
 | Cost | `$ROOT/references/checks/cost-storage.md`, `$ROOT/references/checks/cost-compute.md` |
@@ -146,6 +146,7 @@ Use `$ROOT/references/rubric.md`.
 - Rank findings by `impact × confidence ÷ effort`.
 - The top 3 findings that have a safe rewrite get one from `$ROOT/references/rewrites.md`, with a before/after measurement query. If a finding has no safe rewrite, skip it and take the next finding.
 - Label every rewrite "Review before applying". Never execute it.
+- Only write a rewrite when its column list came from `system.columns` in this run. Set `basis` to that source, for example `system.columns for default.events`. Never write DDL from memory.
 - Write one `areas` entry for each of the five scored areas. `summary` is one sentence: what the audit checked and why the status is what it is. `impact` is one line: what fixing the area is worth, or "No material savings identified." For a green area, list what was checked in `checked`.
 
 ### Step 9 — Cost

@@ -29,14 +29,14 @@
     "infrastructure": "Yellow",
     "schema": "Red",
     "architecture": "Yellow",
-    "queries": "Red",
+    "queries": "Yellow",
     "cost": "Red"
   },
   "score_weights": {
-    "infrastructure": 4,
-    "schema": 9,
-    "architecture": 4,
-    "queries": 6,
+    "infrastructure": 2,
+    "schema": 4,
+    "architecture": 2,
+    "queries": 2,
     "cost": 0
   },
   "summary": "The service reads 4.2 TB per day to return 38 GB, and the top ten query patterns prune almost no granules because the ordering key leads with a UUID. Two event tables and one staging table have not been read in seven days but hold 1.8 TB. Fixing the key and adding a daily rollup would cut read volume by roughly two thirds; TTL and type changes would remove about 3.3 TB of storage.",
@@ -60,7 +60,8 @@
       "confidence": "high",
       "cost_impact": "high",
       "cost_note": "Accounts for about 1.9 TB/day of the 4.2 TB/day read volume.",
-      "metric": "12,204 granules read per query, 0 pruned"
+      "metric": "12,204 granules read per query, 0 pruned",
+      "rank_score": 3.0
     },
     {
       "id": "F2",
@@ -80,7 +81,8 @@
       "confidence": "high",
       "cost_impact": "high",
       "cost_note": "1.8 TB removable at the pinned storage rate.",
-      "metric": "1.8 TB of 8.4 TB stored in unread tables"
+      "metric": "1.8 TB of 8.4 TB stored in unread tables",
+      "rank_score": 4.5
     },
     {
       "id": "F3",
@@ -100,7 +102,8 @@
       "confidence": "high",
       "cost_impact": "medium",
       "cost_note": "Reduces merge write amplification; no direct dollar saving at the current service shape.",
-      "metric": "4,200 parts/day, merge level 10"
+      "metric": "4,200 parts/day, merge level 10",
+      "rank_score": 9.0
     },
     {
       "id": "F4",
@@ -120,7 +123,8 @@
       "confidence": "high",
       "cost_impact": "high",
       "cost_note": "Removes about 1.1 TB/day of repeated reads.",
-      "metric": "38 full scans/day, 1.9 TB read"
+      "metric": "38 full scans/day, 1.9 TB read",
+      "rank_score": 4.5
     },
     {
       "id": "F5",
@@ -141,7 +145,8 @@
       "confidence": "medium",
       "cost_impact": "medium",
       "cost_note": "Estimated 0.6\u20131.2 TB storage reduction after backfill.",
-      "metric": "910 GB across three columns"
+      "metric": "910 GB across three columns",
+      "rank_score": 2.0
     }
   ],
   "precomputation": [
@@ -171,7 +176,8 @@
       "why": "Aligns the key with the filters used by 8 of the top 10 patterns and puts low-cardinality columns first.",
       "expected_effect": "Cuts granules read on the heaviest patterns from 12,204 to under 400, removing about 1.9 TB/day of reads.",
       "measure": "Run EXPLAIN indexes = 1 on the heaviest pattern before and after the backfill; compare Granules read/total.",
-      "review_note": "Review before applying"
+      "review_note": "Review before applying",
+      "basis": "system.columns for default.events"
     },
     {
       "rank": 2,
