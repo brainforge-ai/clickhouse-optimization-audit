@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1 — 2026-10-21
+
+- Remove the pasted booking URL at the bottom of the HTML report. The button carries the link.
+
 ## 0.8.0 — 2026-10-21
 
 - `render_report.py --open` opens the finished HTML report in the default browser. The audit passes it when a local desktop session is available and skips it in cloud or SSH sessions.

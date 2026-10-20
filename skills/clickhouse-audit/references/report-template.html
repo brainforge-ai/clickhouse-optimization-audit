@@ -339,7 +339,6 @@
     <h2>Next step</h2>
     <p id="cta-text"></p>
     <a id="cta-link" href="https://www.brainforge.ai/free-consultation-call">Book the assessment</a>
-    <span class="url" id="cta-url"></span>
   </section>
 </main>
 <footer id="footer"></footer>
@@ -607,7 +606,6 @@
   var ctaUrl = cta.url || "https://www.brainforge.ai/free-consultation-call";
   $("cta-text").textContent = cta.text || "Want the full assessment? Brainforge can turn this audit into a scoped optimization plan.";
   $("cta-link").href = ctaUrl;
-  $("cta-url").textContent = ctaUrl;
   $("hero-cta").href = ctaUrl;
 
   var kpi = [];
