@@ -1,0 +1,12 @@
+ClickHouse Optimization Audit
+Copyright 2026 Brainforge
+
+This product includes software developed by ClickHouse, Inc.
+The vendored agent skills under references/vendor/clickhouse/ are licensed
+under the Apache License, Version 2.0. See:
+- references/vendor/clickhouse/LICENSE
+- references/vendor/clickhouse/NOTICE
+- references/vendor/clickhouse/VENDORED.md
+
+The audit check library, skill instructions, scoring model, report templates,
+and renderer are original Brainforge work, also licensed under Apache-2.0.

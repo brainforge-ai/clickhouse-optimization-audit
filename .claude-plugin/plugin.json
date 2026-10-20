@@ -1,0 +1,16 @@
+{
+  "name": "clickhouse-optimization-audit",
+  "displayName": "ClickHouse Optimization Audit",
+  "version": "0.1.0",
+  "description": "Audit a ClickHouse Cloud service for infrastructure, schema, architecture, query, pre-computation and cost improvements. Read-only, evidence-backed, one browser login.",
+  "author": {
+    "name": "Brainforge",
+    "email": "engineering@brainforge.ai",
+    "url": "https://brainforge.ai"
+  },
+  "homepage": "https://github.com/brainforge-ai/clickhouse-optimization-audit",
+  "repository": "https://github.com/brainforge-ai/clickhouse-optimization-audit",
+  "license": "Apache-2.0",
+  "keywords": ["clickhouse", "audit", "optimization", "cost", "performance", "mcp"],
+  "defaultEnabled": true
+}

@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClickHouse Optimization Audit</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #FCFCFA;
+    --fg: #0B1F0D;
+    --muted: #5B6B5C;
+    --line: #E6ECDD;
+    --card: #FFFFFF;
+    --forest: #244926;
+    --accent: #3FA93A;
+    --red: #B3261E;
+    --amber: #A86400;
+    --green: #2E7D32;
+    --info: #3B6EA5;
+    --code-bg: #F3F6EF;
+    --shadow: 0 1px 2px rgba(11, 31, 13, .06), 0 8px 24px rgba(11, 31, 13, .04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #08140A;
+      --fg: #E6ECDD;
+      --muted: #9FB3A0;
+      --line: #1E3320;
+      --card: #0B1F0D;
+      --accent: #6FD46A;
+      --red: #FF8A80;
+      --amber: #FFC46B;
+      --green: #7BD88F;
+      --info: #7FB2E5;
+      --code-bg: #102413;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.55 "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  .hero {
+    background: #0B1F0D;
+    color: #FCFCFA;
+    padding: 40px 24px 32px;
+    border-bottom: 4px solid #3FA93A;
+  }
+  .hero-inner { max-width: 1080px; margin: 0 auto; }
+  .brand {
+    font-size: 12px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #9CC79A;
+    margin-bottom: 18px;
+  }
+  .hero h1 { margin: 0 0 8px; font-size: clamp(28px, 5vw, 44px); line-height: 1.1; font-weight: 600; }
+  .hero p { margin: 0; color: #C9D8C9; max-width: 70ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-size: 13px; color: #C9D8C9; }
+  .meta b { color: #FCFCFA; font-weight: 500; }
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
+  section { margin: 0 0 40px; }
+  h2 {
+    font-size: 13px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 14px;
+    font-weight: 600;
+  }
+  h3 { font-size: 18px; margin: 0 0 8px; }
+  .lead { font-size: 18px; line-height: 1.6; margin: 0; }
+  .grid { display: grid; gap: 12px; }
+  .scores { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .score {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .score .label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .score .value { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 600; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .red .dot { background: var(--red); }
+  .amber .dot { background: var(--amber); }
+  .green .dot { background: var(--green); }
+  .red .value { color: var(--red); }
+  .amber .value { color: var(--amber); }
+  .green .value { color: var(--green); }
+  .score .weight { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .finding {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--muted);
+    border-radius: 10px;
+    margin: 0 0 12px;
+    box-shadow: var(--shadow);
+  }
+  .finding.sev-critical { border-left-color: var(--red); }
+  .finding.sev-high { border-left-color: var(--amber); }
+  .finding.sev-medium { border-left-color: var(--info); }
+  .finding > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+  .finding > summary::-webkit-details-marker { display: none; }
+  .badge {
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--code-bg);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .sev-critical .badge { color: var(--red); }
+  .sev-high .badge { color: var(--amber); }
+  .sev-medium .badge { color: var(--info); }
+  .finding-title { font-weight: 600; display: block; }
+  .finding-object { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .rank { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+  .finding-body { padding: 0 18px 18px; border-top: 1px solid var(--line); }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
+  .field .k { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .field .v { font-size: 14px; }
+  .body-block { margin: 12px 0 0; }
+  .body-block .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 4px; }
+  pre {
+    margin: 8px 0 0;
+    padding: 14px 16px;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow-x: auto;
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .kw { color: var(--accent); font-weight: 600; }
+  .cards { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+  }
+  .card p { margin: 6px 0; color: var(--muted); font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  .chart { margin: 16px 0 0; }
+  .chart svg { width: 100%; height: auto; display: block; }
+  .chart .bar { fill: var(--accent); }
+  .chart .track { fill: var(--line); }
+  .chart text { fill: var(--muted); font-size: 12px; }
+  .money { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 14px; }
+  .money .card strong { display: block; font-size: 24px; margin-top: 6px; }
+  .rewrite { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .split h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 10px 0 0; }
+  .note { font-size: 13px; color: var(--muted); background: var(--code-bg); border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+  ul.clean { margin: 0; padding-left: 20px; }
+  ul.clean li { margin: 6px 0; }
+  .cta {
+    background: #0B1F0D;
+    color: #FCFCFA;
+    border-radius: 14px;
+    padding: 28px;
+  }
+  .cta h2 { color: #9CC79A; }
+  .cta p { margin: 0 0 16px; color: #C9D8C9; max-width: 65ch; }
+  .cta a {
+    display: inline-block;
+    background: #3FA93A;
+    color: #071108;
+    text-decoration: none;
+    font-weight: 700;
+    padding: 12px 18px;
+    border-radius: 8px;
+  }
+  footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; padding: 20px 24px 40px; max-width: 1080px; margin: 0 auto; }
+  @media (max-width: 720px) {
+    .split { grid-template-columns: 1fr; }
+    .finding > summary { grid-template-columns: auto 1fr; }
+    .finding > summary .rank { display: none; }
+    main { padding: 24px 16px 48px; }
+    .hero { padding: 28px 16px 24px; }
+  }
+  @media print {
+    :root { --bg: #fff; --fg: #111; --muted: #555; --line: #ddd; --card: #fff; }
+    .hero { background: #fff; color: #111; border-bottom: 2px solid #3FA93A; }
+    .hero p, .meta { color: #333; }
+    .meta b { color: #111; }
+    .cta { background: #fff; color: #111; border: 1px solid #3FA93A; }
+    .cta p { color: #333; }
+    .finding, .card, table, .rewrite { box-shadow: none; }
+    details > summary { list-style: none; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <div class="brand">Brainforge · ClickHouse Optimization Audit</div>
+    <h1 id="title">ClickHouse Optimization Audit</h1>
+    <p id="subtitle"></p>
+    <div class="meta" id="meta"></div>
+  </div>
+</header>
+<main>
+  <section>
+    <h2>Executive summary</h2>
+    <p class="lead" id="summary"></p>
+  </section>
+  <section>
+    <h2>Scorecard</h2>
+    <div class="grid scores" id="scores"></div>
+  </section>
+  <section>
+    <h2>Findings</h2>
+    <div id="findings"></div>
+  </section>
+  <section id="precomp-section">
+    <h2>Pre-computation opportunities</h2>
+    <div class="grid cards" id="precomputation"></div>
+  </section>
+  <section>
+    <h2>Cost</h2>
+    <div class="money" id="money"></div>
+    <h3 style="margin-top:24px">Measured terms</h3>
+    <table id="measured"></table>
+    <h3 style="margin-top:24px">Cost drivers</h3>
+    <div class="chart" id="chart"></div>
+    <table id="drivers"></table>
+    <p class="note" id="cost-note"></p>
+  </section>
+  <section>
+    <h2>Top 3 rewrites</h2>
+    <div id="rewrites"></div>
+  </section>
+  <section>
+    <h2>Gaps</h2>
+    <ul class="clean" id="gaps"></ul>
+  </section>
+  <section class="cta" id="cta-section">
+    <h2>Next step</h2>
+    <p id="cta-text"></p>
+    <a id="cta-link" href="#">Book the assessment</a>
+  </section>
+</main>
+<footer id="footer"></footer>
+
+<script type="application/json" id="findings-data">__FINDINGS_JSON__</script>
+<script>
+(function () {
+  "use strict";
+
+  var data;
+  try {
+    data = JSON.parse(document.getElementById("findings-data").textContent);
+  } catch (e) {
+    document.getElementById("summary").textContent = "Could not parse findings.json: " + e.message;
+    return;
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function list(value) {
+    if (Array.isArray(value)) return value.join(", ");
+    return value == null ? "" : String(value);
+  }
+  function num(value, digits) {
+    if (value == null || value === "" || isNaN(Number(value))) return "—";
+    return Number(value).toLocaleString(undefined, { maximumFractionDigits: digits == null ? 0 : digits });
+  }
+  var KEYWORDS = /^(select|from|where|group by|order by|limit|join|left|right|inner|outer|on|as|and|or|not|in|is|null|create|table|materialized|view|engine|partition by|primary key|ttl|alter|add|projection|codec|settings|with|having|prewhere|array join|using|final|distinct|count|sum|avg|min|max|quantile|toDate|today|now|interval|day|month)$/i;
+  function sql(text) {
+    var safe = esc(text || "");
+    return safe.replace(/\b([A-Za-z_][A-Za-z0-9_ ]{0,20})\b/g, function (match) {
+      return KEYWORDS.test(match.trim()) ? '<span class="kw">' + match + "</span>" : match;
+    });
+  }
+  function pre(text) {
+    return text ? "<pre><code>" + sql(text) + "</code></pre>" : "";
+  }
+
+  var scope = data.scope || {};
+  var scores = data.scores || {};
+  var weights = data.score_weights || {};
+  var cost = data.cost || {};
+  var dollars = cost.dollars || {};
+  var measured = cost.measured || {};
+
+  var pageTitle = "ClickHouse Optimization Audit — " + (scope.service || "service");
+  document.title = pageTitle;
+  $("title").textContent = pageTitle;
+  $("subtitle").textContent = "Read-only review of infrastructure, schema, architecture, queries, pre-computation and cost. Every finding cites measured evidence and a ClickHouse best-practice rule.";
+  var metaBits = [
+    ["Service", scope.service],
+    ["Tier", scope.tier],
+    ["Provider / region", [scope.provider, scope.region].filter(Boolean).join(" / ")],
+    ["Window", scope.window_days ? scope.window_days + " days" : ""],
+    ["Tables", scope.tables_audited],
+    ["Queries", scope.audit_queries]
+  ];
+  $("meta").innerHTML = metaBits.filter(function (x) { return x[1]; }).map(function (x) {
+    return "<span><b>" + esc(x[0]) + ":</b> " + esc(x[1]) + "</span>";
+  }).join("");
+
+  $("summary").textContent = data.summary || "";
+
+  var areas = [
+    ["infrastructure", "Infrastructure"],
+    ["schema", "Schema"],
+    ["architecture", "Architecture"],
+    ["queries", "Queries"],
+    ["cost", "Cost efficiency"]
+  ];
+  $("scores").innerHTML = areas.map(function (a) {
+    var value = scores[a[0]] || "—";
+    var cls = String(value).toLowerCase();
+    var weight = a[0] === "cost" ? "derived from drivers" : "weight " + (weights[a[0]] == null ? "—" : weights[a[0]]);
+    return '<div class="score ' + esc(cls) + '"><div class="label">' + esc(a[1]) + '</div><div class="value"><span class="dot"></span>' + esc(value) + '</div><div class="weight">' + esc(weight) + "</div></div>";
+  }).join("");
+
+  var findings = data.findings || [];
+  $("findings").innerHTML = findings.length ? findings.map(function (f, i) {
+    var sev = String(f.severity || "MEDIUM").toLowerCase();
+    return '<details class="finding sev-' + esc(sev) + '">' +
+      '<summary><span class="badge">' + esc(f.severity || "MEDIUM") + '</span>' +
+      '<span><span class="finding-title">' + esc(f.title) + '</span><span class="finding-object">' + esc(f.object) + ' · <code>' + esc(f.rule_id) + "</code></span></span>" +
+      '<span class="rank">#' + (i + 1) + "</span></summary>" +
+      '<div class="finding-body">' +
+      '<div class="fields">' +
+        '<div class="field"><div class="k">Impact</div><div class="v">' + esc(f.impact) + "</div></div>" +
+        '<div class="field"><div class="k">Confidence</div><div class="v">' + esc(f.confidence) + "</div></div>" +
+        '<div class="field"><div class="k">Effort</div><div class="v">' + esc(f.effort) + "</div></div>" +
+        '<div class="field"><div class="k">Cost impact</div><div class="v">' + esc(f.cost_impact) + "</div></div>" +
+      "</div>" +
+      '<div class="body-block"><div class="k">Evidence</div><div>' + esc(f.evidence) + "</div></div>" +
+      '<div class="body-block"><div class="k">Fix</div><div>' + esc(f.fix) + "</div></div>" +
+      (f.cost_note ? '<div class="body-block"><div class="k">Cost note</div><div>' + esc(f.cost_note) + "</div></div>" : "") +
+      "</div></details>";
+  }).join("") : '<p class="note">No findings. The audit did not collect enough evidence to support one.</p>';
+
+  var precomp = data.precomputation || [];
+  if (!precomp.length) {
+    $("precomp-section").style.display = "none";
+  } else {
+    $("precomputation").innerHTML = precomp.map(function (p) {
+      return '<div class="card"><h3>' + esc(p.title) + "</h3>" +
+        "<p><b>Expected effect:</b> " + esc(p.expected_effect) + "</p>" +
+        "<p><b>Effort:</b> " + esc(p.effort) + " · <b>Confidence:</b> " + esc(p.confidence) + "</p>" +
+        pre(p.ddl) + "</div>";
+    }).join("");
+  }
+
+  var money = [];
+  if (dollars.storage_monthly_savings != null) {
+    money.push(["Storage savings", "$" + num(dollars.storage_monthly_savings) + "/mo", "Direct arithmetic on compressed bytes."]);
+  }
+  if (dollars.compute_monthly_savings != null) {
+    money.push(["Compute savings", "$" + num(dollars.compute_monthly_savings) + "/mo", "Requires the named service-shape change."]);
+  } else if (dollars.compute_requires_shape_change) {
+    money.push(["Compute savings", "Headroom", "No service-shape change is justified, so no dollar saving is claimed."]);
+  }
+  money.push(["Total estimate", "$" + num(dollars.total_low) + "–$" + num(dollars.total_high) + "/mo", "Low = storage only. High includes compute when supported."]);
+  $("money").innerHTML = money.map(function (m) {
+    return '<div class="card"><div class="k">' + esc(m[0]) + "</div><strong>" + esc(m[1]) + "</strong><p>" + esc(m[2]) + "</p></div>";
+  }).join("");
+
+  var rows = [
+    ["Read volume", num(measured.read_tb_per_day, 2) + " TB/day", num(measured.read_tb_per_day_after, 2) + " TB/day (" + num(measured.read_reduction_pct) + "%)"],
+    ["Storage (compressed)", num(measured.storage_tb, 2) + " TB", num(measured.storage_tb_after, 2) + " TB (" + num(measured.storage_reduction_pct) + "%)"],
+    ["Parts created", num(measured.parts_per_day) + "/day", "—"],
+    ["Cache hit rate", num(measured.cache_hit_pct, 1) + "%", "target " + num(measured.cache_target_pct, 1) + "%"]
+  ];
+  $("measured").innerHTML = "<thead><tr><th>Term</th><th>Current</th><th>After fixes</th></tr></thead><tbody>" +
+    rows.map(function (r) { return "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td><td>" + esc(r[2]) + "</td></tr>"; }).join("") +
+    "</tbody>";
+
+  var drivers = cost.drivers || [];
+  $("drivers").innerHTML = "<thead><tr><th>Driver</th><th>Evidence</th><th>Monthly impact</th><th>Fix</th><th>Est. reduction</th><th>Confidence</th></tr></thead><tbody>" +
+    drivers.map(function (d) {
+      return "<tr><td>" + esc(d.driver) + "</td><td>" + esc(d.evidence) + "</td><td>" + esc(d.monthly_impact) + "</td><td>" + esc(d.fix) + "</td><td>" + num(d.est_reduction_pct) + "%</td><td>" + esc(d.confidence) + "</td></tr>";
+    }).join("") + "</tbody>";
+
+  if (drivers.length) {
+    var width = 720, rowH = 34, pad = 8, labelW = 220, max = Math.max.apply(null, drivers.map(function (d) { return Number(d.est_reduction_pct) || 0; }).concat([1]));
+    var height = drivers.length * rowH + pad * 2;
+    var svg = '<svg viewBox="0 0 ' + width + " " + height + '" role="img" aria-label="Estimated reduction by cost driver">';
+    drivers.forEach(function (d, i) {
+      var v = Number(d.est_reduction_pct) || 0;
+      var y = pad + i * rowH;
+      var barW = Math.max(2, Math.round((width - labelW - 70) * v / max));
+      svg += '<text x="0" y="' + (y + 20) + '">' + esc(String(d.driver).slice(0, 34)) + "</text>";
+      svg += '<rect class="track" x="' + labelW + '" y="' + (y + 6) + '" width="' + (width - labelW - 70) + '" height="18" rx="9"></rect>';
+      svg += '<rect class="bar" x="' + labelW + '" y="' + (y + 6) + '" width="' + barW + '" height="18" rx="9"></rect>';
+      svg += '<text x="' + (labelW + barW + 8) + '" y="' + (y + 20) + '">' + v + "%</text>";
+    });
+    svg += "</svg>";
+    $("chart").innerHTML = svg;
+  } else {
+    $("chart").style.display = "none";
+  }
+
+  $("cost-note").textContent = "Estimate based on published ClickHouse Cloud rates (" +
+    [cost.plan, cost.provider, cost.region].filter(Boolean).join(", ") + ") as of " + (cost.pricing_date || "the pinned pricing date") +
+    ". Not a quote. Verify at clickhouse.com/pricing. Excludes " + (dollars.excluded ? list(dollars.excluded) : "backups, egress and ClickPipes") + ".";
+
+  var rewrites = data.rewrites || [];
+  $("rewrites").innerHTML = rewrites.map(function (r) {
+    return '<div class="rewrite"><h3>' + esc(r.rank) + ". " + esc(r.title) + "</h3>" +
+      "<p><b>Finding:</b> " + esc(r.finding_id) + " — " + esc(r.why) + "</p>" +
+      (r.expected_effect ? "<p><b>Expected effect:</b> " + esc(r.expected_effect) + "</p>" : "") +
+      '<div class="split"><div><h4>Before</h4>' + pre(r.before) + '</div><div><h4>After</h4>' + pre(r.after) + "</div></div>" +
+      "<p><b>Measure:</b> " + esc(r.measure) + "</p>" +
+      '<p class="note">' + esc(r.review_note || "Review before applying") + "</p></div>";
+  }).join("") || '<p class="note">No safe rewrite was available for the top findings.</p>';
+
+  var gaps = data.gaps || [];
+  $("gaps").innerHTML = gaps.length ? gaps.map(function (g) {
+    return "<li><b>" + esc(g.area) + ":</b> " + esc(g.gap) + " — " + esc(g.why) + "</li>";
+  }).join("") : "<li>No gaps. All checks ran with the permissions available.</li>";
+
+  var cta = data.cta || {};
+  $("cta-text").textContent = cta.text || "Want the full assessment? Brainforge can turn this audit into a scoped optimization plan.";
+  if (cta.url) { $("cta-link").href = cta.url; }
+
+  $("footer").textContent = "Generated " + (data.generated_at || "") +
+    ". Read-only audit. No data was modified. Query literals were redacted. Findings cite ClickHouse best-practice rules vendored under Apache-2.0.";
+
+  window.addEventListener("beforeprint", function () {
+    Array.prototype.forEach.call(document.querySelectorAll("details"), function (d) { d.open = true; });
+  });
+})();
+</script>
+</body>
+</html>

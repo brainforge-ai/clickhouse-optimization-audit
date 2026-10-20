@@ -1,0 +1,16 @@
+{
+  "name": "brainforge-plugins",
+  "description": "Brainforge partner and delivery plugins. Free, read-only, no hosted backend.",
+  "owner": {
+    "name": "Brainforge",
+    "email": "engineering@brainforge.ai"
+  },
+  "plugins": [
+    {
+      "name": "clickhouse-optimization-audit",
+      "source": "./",
+      "description": "Read-only ClickHouse Cloud optimization audit across infrastructure, schema, architecture, queries, pre-computation and cost.",
+      "defaultEnabled": true
+    }
+  ]
+}

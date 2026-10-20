@@ -1,0 +1,287 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-10-20T14:32:00Z",
+  "scope": {
+    "service": "demo-analytics",
+    "service_id": "e5b1c2a4-0000-0000-0000-000000000000",
+    "organization": "Demo Org",
+    "tier": "Scale",
+    "provider": "AWS",
+    "region": "us-east-1",
+    "window_days": 7,
+    "window_start": "2026-10-13",
+    "window_end": "2026-10-20",
+    "databases": [
+      "default",
+      "product"
+    ],
+    "tables_audited": 38,
+    "accessible": [
+      "system.query_log",
+      "system.parts",
+      "system.tables",
+      "system.columns",
+      "system.merges"
+    ],
+    "audit_queries": 36
+  },
+  "scores": {
+    "infrastructure": "Amber",
+    "schema": "Red",
+    "architecture": "Amber",
+    "queries": "Red",
+    "cost": "Red"
+  },
+  "score_weights": {
+    "infrastructure": 4,
+    "schema": 9,
+    "architecture": 4,
+    "queries": 6,
+    "cost": 0
+  },
+  "summary": "The service reads 4.2 TB per day to return 38 GB, and the top ten query patterns prune almost no granules because the ordering key leads with a UUID. Two event tables and one staging table have not been read in seven days but hold 1.8 TB. Fixing the key and adding a daily rollup would cut read volume by roughly two thirds; TTL and type changes would remove about 3.3 TB of storage.",
+  "findings": [
+    {
+      "id": "F1",
+      "rule_id": "schema-pk-cardinality-order",
+      "rule_ids": [
+        "schema-pk-cardinality-order",
+        "schema-pk-prioritize-filters",
+        "schema-pk-filter-on-orderby"
+      ],
+      "area": "Schema",
+      "severity": "CRITICAL",
+      "title": "Ordering key leads with a UUID and prunes no granules",
+      "object": "default.events",
+      "evidence": "ORDER BY (event_id, event_time). Top 10 patterns filter on tenant_id and event_type. EXPLAIN shows 12,204/12,204 granules read for the heaviest pattern.",
+      "impact": "high",
+      "fix": "Create a new table ordered by (tenant_id, event_type, event_time), backfill, then swap. Keep event_id as a column.",
+      "effort": "high",
+      "confidence": "high",
+      "cost_impact": "high",
+      "cost_note": "Accounts for about 1.9 TB/day of the 4.2 TB/day read volume."
+    },
+    {
+      "id": "F2",
+      "rule_id": "cost:storage",
+      "rule_ids": [
+        "cost:storage",
+        "infra-parts"
+      ],
+      "area": "Infrastructure",
+      "severity": "HIGH",
+      "title": "Three large tables have no reads in the window",
+      "object": "default.events_raw, product.pageviews_staging, default.legacy_orders",
+      "evidence": "0 read queries in 7 days. Combined 1.8 TB compressed across 2,140 active parts.",
+      "impact": "high",
+      "fix": "Confirm with the owner, then add a 90-day TTL and archive to object storage. Drop staging tables that are no longer used.",
+      "effort": "medium",
+      "confidence": "high",
+      "cost_impact": "high",
+      "cost_note": "1.8 TB removable at the pinned storage rate."
+    },
+    {
+      "id": "F3",
+      "rule_id": "insert-batch-size",
+      "rule_ids": [
+        "insert-batch-size",
+        "insert-async-small-batches"
+      ],
+      "area": "Architecture",
+      "severity": "HIGH",
+      "title": "Small inserts create 4,200 parts per day",
+      "object": "default.events",
+      "evidence": "Average 2,100 rows per insert, 4,200 inserts per day, 4,200 active parts and 18 concurrent merges at peak.",
+      "impact": "high",
+      "fix": "Batch to 10k–100k rows or enable async inserts with wait_for_async_insert = 1.",
+      "effort": "low",
+      "confidence": "high",
+      "cost_impact": "medium",
+      "cost_note": "Reduces merge write amplification; no direct dollar saving at the current service shape."
+    },
+    {
+      "id": "F4",
+      "rule_id": "query-mv-incremental",
+      "rule_ids": [
+        "query-mv-incremental",
+        "architecture-advisor:decision-real-time-preaggregation"
+      ],
+      "area": "Queries",
+      "severity": "HIGH",
+      "title": "The same daily tenant rollup runs 38 times a day",
+      "object": "default.events",
+      "evidence": "Normalized pattern 8f21c0 runs 38 times/day, reads 1.1 TB/day, and returns 2.4 MB per run.",
+      "impact": "high",
+      "fix": "Add an AggregatingMergeTree rollup keyed by (tenant_id, day) and point dashboards at it.",
+      "effort": "medium",
+      "confidence": "high",
+      "cost_impact": "high",
+      "cost_note": "Removes about 1.1 TB/day of repeated reads."
+    },
+    {
+      "id": "F5",
+      "rule_id": "schema-types-avoid-nullable",
+      "rule_ids": [
+        "schema-types-avoid-nullable",
+        "schema-types-lowcardinality",
+        "schema-types-minimize-bitwidth"
+      ],
+      "area": "Schema",
+      "severity": "MEDIUM",
+      "title": "Wide types and Nullable masks inflate storage",
+      "object": "default.events columns",
+      "evidence": "status is String at 410 GB, country is Nullable(String) at 320 GB, user_seq is UInt64 at 180 GB.",
+      "impact": "medium",
+      "fix": "Use LowCardinality(String) for status and country, a non-null default for country, and UInt32 for user_seq. Verify uniqExact before applying.",
+      "effort": "medium",
+      "confidence": "medium",
+      "cost_impact": "medium",
+      "cost_note": "Estimated 0.6–1.2 TB storage reduction after backfill."
+    }
+  ],
+  "precomputation": [
+    {
+      "id": "P1",
+      "title": "Daily tenant rollup for the dashboard pattern",
+      "replaces": [
+        "F4",
+        "F1"
+      ],
+      "ddl": "CREATE MATERIALIZED VIEW events_daily\nENGINE = AggregatingMergeTree\nORDER BY (tenant_id, day)\nAS SELECT tenant_id, toDate(event_time) AS day, countState() AS events\nFROM default.events\nGROUP BY tenant_id, day;",
+      "patterns": [
+        "SELECT tenant_id, toDate(event_time), count() FROM default.events GROUP BY tenant_id, day"
+      ],
+      "expected_effect": "Replaces 38 scans/day of raw events (1.1 TB/day) with a scan of a rollup estimated at 2 GB.",
+      "effort": "medium",
+      "confidence": "high"
+    }
+  ],
+  "rewrites": [
+    {
+      "rank": 1,
+      "finding_id": "F1",
+      "title": "New ordering key for default.events",
+      "before": "CREATE TABLE default.events (...)\nENGINE = MergeTree\nORDER BY (event_id, event_time);",
+      "after": "CREATE TABLE default.events_v2 (...)\nENGINE = MergeTree\nORDER BY (tenant_id, event_type, event_time);",
+      "why": "Aligns the key with the filters used by 8 of the top 10 patterns and puts low-cardinality columns first.",
+      "expected_effect": "Cuts granules read on the heaviest patterns from 12,204 to under 400, removing about 1.9 TB/day of reads.",
+      "measure": "Run EXPLAIN indexes = 1 on the heaviest pattern before and after the backfill; compare Granules read/total.",
+      "review_note": "Review before applying"
+    },
+    {
+      "rank": 2,
+      "finding_id": "F2",
+      "title": "Retention for unread tables",
+      "before": "-- no TTL",
+      "after": "ALTER TABLE default.legacy_orders\nMODIFY TTL created_at + INTERVAL 90 DAY DELETE;",
+      "why": "Drops whole partitions instead of keeping 1.2 TB that has not been read in seven days.",
+      "expected_effect": "Removes 1.2 TB of unread storage after the first TTL merge.",
+      "measure": "SELECT formatReadableSize(sum(bytes_on_disk)) FROM system.parts WHERE active AND table = 'legacy_orders' before and after the first TTL merge.",
+      "review_note": "Review before applying"
+    },
+    {
+      "rank": 3,
+      "finding_id": "F3",
+      "title": "Batch inserts into default.events",
+      "before": "-- 2,100 rows per insert, 4,200 inserts/day",
+      "after": "SET async_insert = 1;\nSET wait_for_async_insert = 1;",
+      "why": "Server-side batching reduces part creation and merge work without changing the client schema.",
+      "expected_effect": "Cuts part creation from 4,200/day to under 300/day and reduces merge write amplification.",
+      "measure": "Compare parts created per day in system.parts and active merges in system.merges over the next 48 hours.",
+      "review_note": "Review before applying"
+    }
+  ],
+  "cost": {
+    "pricing_date": "2026-10",
+    "pricing_source": "https://clickhouse.com/pricing",
+    "plan": "Scale",
+    "provider": "AWS",
+    "region": "us-east-1",
+    "measured": {
+      "read_tb_per_day": 4.2,
+      "read_tb_per_day_after": 1.4,
+      "read_reduction_pct": 67,
+      "storage_tb": 8.4,
+      "storage_tb_after": 5.1,
+      "storage_reduction_pct": 39,
+      "parts_per_day": 4200,
+      "cache_hit_pct": 41,
+      "cache_target_pct": 80
+    },
+    "drivers": [
+      {
+        "driver": "Unread tables",
+        "evidence": "3 tables, 0 reads, 1.8 TB",
+        "finding_ids": [
+          "F2"
+        ],
+        "monthly_impact": "1.8 TB removed",
+        "fix": "TTL + archive",
+        "est_reduction_pct": 21,
+        "confidence": "high"
+      },
+      {
+        "driver": "Ordering key misalignment",
+        "evidence": "0/12,204 granules pruned",
+        "finding_ids": [
+          "F1"
+        ],
+        "monthly_impact": "1.9 TB/day fewer reads",
+        "fix": "New key + backfill",
+        "est_reduction_pct": 45,
+        "confidence": "high"
+      },
+      {
+        "driver": "Repeated daily rollup",
+        "evidence": "38 runs/day, 1.1 TB/day",
+        "finding_ids": [
+          "F4"
+        ],
+        "monthly_impact": "1.1 TB/day fewer reads",
+        "fix": "Aggregating MV",
+        "est_reduction_pct": 26,
+        "confidence": "high"
+      },
+      {
+        "driver": "Wide types and Nullables",
+        "evidence": "910 GB across three columns",
+        "finding_ids": [
+          "F5"
+        ],
+        "monthly_impact": "0.6–1.2 TB removed",
+        "fix": "Type + codec changes",
+        "est_reduction_pct": 9,
+        "confidence": "medium"
+      }
+    ],
+    "dollars": {
+      "currency": "USD",
+      "storage_monthly_savings": 83.49,
+      "compute_monthly_savings": 218.46,
+      "compute_requires_shape_change": true,
+      "total_low": 83.49,
+      "total_high": 301.95,
+      "excluded": [
+        "backups",
+        "egress",
+        "ClickPipes"
+      ]
+    }
+  },
+  "gaps": [
+    {
+      "area": "Queries",
+      "gap": "Saved queries are not exposed",
+      "why": "ClickHouse Cloud keeps saved queries in console metadata, not a system table. Only views and materialized views were reviewed."
+    },
+    {
+      "area": "Infrastructure",
+      "gap": "Host metrics are not available",
+      "why": "The remote MCP exposes no CPU or disk metrics. The infra review uses parts, merges, cache counters and service metadata."
+    }
+  ],
+  "cta": {
+    "text": "Want the full assessment? Brainforge can turn this audit into a scoped optimization plan with projected savings and a delivery sequence.",
+    "url": "https://www.brainforge.ai/free-consultation-call"
+  }
+}
