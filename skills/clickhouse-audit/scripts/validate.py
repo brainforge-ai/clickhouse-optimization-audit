@@ -42,7 +42,7 @@ check(bool(plugin.get("version")), "plugin version is required")
 check(bool(plugin.get("description")), "plugin description is required")
 check(isinstance(plugin.get("author"), dict) and bool(plugin["author"].get("name")), "plugin author.name is required")
 check(plugin.get("license") == "Apache-2.0", "plugin license should be Apache-2.0")
-check(plugin.get("defaultEnabled") is True, "plugin defaultEnabled should be true")
+check("defaultEnabled" not in plugin, "plugin.json must not set defaultEnabled; use the marketplace entry")
 for key in ("homepage", "repository"):
     value = plugin.get(key, "")
     check(value.startswith("https://"), f"{key} must be an absolute https URL")

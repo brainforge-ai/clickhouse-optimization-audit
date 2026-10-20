@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-10-21
+
+- Remove `defaultEnabled` from `plugin.json`. The marketplace entry still sets it, and older Claude Code builds (and the SDK) strip the manifest field as unknown.
+
 ## 0.2.0 — 2026-10-21
 
 - Score statuses are Red / Yellow / Green (was Red / Amber / Green).

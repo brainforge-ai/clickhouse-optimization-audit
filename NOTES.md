@@ -3,7 +3,7 @@
 ## Verified against current docs
 
 - `.mcp.json` remote server shape: `{ "type": "http", "url": "https://mcp.clickhouse.cloud/mcp" }`. OAuth is triggered by the server; no extra config. Source: code.claude.com/docs/en/mcp.
-- Plugin manifest fields: `name`, `displayName`, `version`, `description`, `author`, `homepage`, `repository`, `license`, `keywords`, `defaultEnabled`. Source: code.claude.com/docs/en/plugins/manifest-reference.
+- Plugin manifest fields: `name`, `displayName`, `version`, `description`, `author`, `homepage`, `repository`, `license`, `keywords`. `defaultEnabled` lives in the marketplace entry; older Claude Code builds strip it from `plugin.json`. Source: code.claude.com/docs/en/plugins/manifest-reference.
 - Marketplace file: `.claude-plugin/marketplace.json` with `name`, `owner`, `plugins[].source`. Source: code.claude.com/docs/en/plugin-marketplaces.
 - Plugin MCP servers start automatically when the plugin is enabled. Source: code.claude.com/docs/en/mcp#plugin-provided-mcp-servers.
 - Remote MCP on claude.ai chat is listed on the plugin's Connectors tab and needs one Connect click. Source: claude.com/docs/plugins/platform-support.
