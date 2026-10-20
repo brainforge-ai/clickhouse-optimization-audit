@@ -76,8 +76,10 @@ Keep `organizationId` and `serviceId` for the rest of the run. Pass `serviceId` 
 Before the first query, tell the user:
 - Scope: the full service. All user databases, tables and columns.
 - Service name and tier.
-- Window: 7 days by default. Offer 1, 7, 30, a custom number of days, or full history (everything the service retains).
-- If the service retains less than the requested window, use the shorter available range and state the actual start and end in the report.
+- Window: full history by default, meaning everything the service still retains in `system.query_log` and `system.part_log`. Offer 1, 7, 30, or a custom number of days.
+- Read the measured log range in the preflight. Set `scope.window_days` to `null` for full history, and set `window_start` and `window_end` from that measured range.
+- If the service retains less than a requested window, use the shorter available range and state the actual start and end in the report.
+- If a full-history query hits the 60 second limit, halve the range, record the reduced range as a gap, and never guess.
 - Roughly 40 queries, mostly against `system.query_log`, `system.parts`, `system.tables` and `system.columns`.
 - "If the service is idle, this will wake it and incur compute."
 - Access limits: the audit can only see what the signed-in role can read.

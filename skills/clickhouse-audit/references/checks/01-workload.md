@@ -1,6 +1,6 @@
 # Workload profile (pass 2)
 
-Default window: 7 days. Replace `7` with the user's choice (`1`, `30`, or a custom number of days). For full history, drop the time predicate or start from the oldest retained `event_time`, and state the actual range in the report. Always read through `clusterAllReplicas('<cluster>', system.query_log)` when the cluster exists. Take `<cluster>` from the inventory (`system.clusters`). If no cluster is reported, drop the wrapper and record a partial-workload gap.
+Default window: full history. Every query below shows a 7-day filter for readability. For the default run, delete the `event_date` and `event_time` lines. For a chosen window, replace `7` with the user's number of days. Always read through `clusterAllReplicas('<cluster>', system.query_log)` when the cluster exists. Take `<cluster>` from the inventory (`system.clusters`). If no cluster is reported, drop the wrapper and record a partial-workload gap.
 
 Every query excludes the audit's own statements with `query NOT LIKE '%bf_audit%'`.
 

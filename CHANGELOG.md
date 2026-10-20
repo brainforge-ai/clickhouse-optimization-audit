@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.0 — 2026-10-21
+
+- Default window is full retained history (`window_days: null`), not 7 days. A run can still ask for 1, 7, 30 or a custom number of days.
+- The measured log range sets `window_start` and `window_end`. A long-range timeout halves the range and records the reduced range as a gap.
+
 ## 0.6.0 — 2026-10-21
 
 - Stale-table detection: last read time per table across the full log retention, with thresholds for never read, 90+ days and 30 to 90 days.

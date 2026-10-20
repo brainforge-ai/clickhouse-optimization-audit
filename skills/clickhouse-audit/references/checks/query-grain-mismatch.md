@@ -29,7 +29,7 @@ LIMIT 2000
 SETTINGS max_execution_time = 60, log_comment = 'bf_audit'
 ```
 
-2. Find repeated aggregations on base tables:
+2. Find repeated aggregations on base tables. The time filter below is a 7-day example; for the default full-history run, drop the `event_date` line.
 
 ```sql
 /* bf_audit */

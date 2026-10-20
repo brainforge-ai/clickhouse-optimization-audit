@@ -61,7 +61,7 @@ Take the top 3 findings by rank that have a safe rewrite. A finding without a sa
 
 ## `findings.json` schema
 
-Write exactly this shape. The HTML renderer reads it directly. `scope.window_days` is a number of days, or `null` for the full history the service retains.
+Write exactly this shape. The HTML renderer reads it directly. `scope.window_days` is `null` for the default full-history run, or a number of days when the user picks a window.
 
 ```json
 {

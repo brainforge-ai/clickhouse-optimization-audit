@@ -69,7 +69,7 @@ On Claude Code and Cowork the server starts with the plugin. On claude.ai chat i
 
 Or ask: “Audit my ClickHouse service.”
 
-Optional arguments: a service name and a window (`1d`, `7d`, `30d`, a custom number of days, or `all` for the full retained history). Default window: 7 days. If the service retains less than the requested window, the audit uses what is available and states the actual range. If the organization or service is ambiguous, the plugin asks. It never guesses.
+Optional arguments: a service name and a window (`all`, `1d`, `7d`, `30d`, or a custom number of days). Default window: full retained history. If the service retains less than a requested window, the audit uses what is available and states the actual range. If the organization or service is ambiguous, the plugin asks. It never guesses.
 
 Before querying, the plugin states the window, the approximate query count (around 40), and that an idle service will wake and incur compute. It asks for one confirmation.
 
