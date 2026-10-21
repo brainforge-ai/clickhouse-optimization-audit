@@ -180,3 +180,9 @@ skills/clickhouse-audit/scripts/render_report.py   findings.json → self-contai
 ## License and attribution
 
 Apache-2.0. The vendored ClickHouse agent skills are Apache-2.0, Copyright ClickHouse, Inc. See `LICENSE`, `NOTICE`, and `skills/clickhouse-audit/references/vendor/clickhouse/`.
+
+## Want the full assessment?
+
+The plugin gives you the audit. Brainforge can turn it into a scoped optimization plan with projected savings and a delivery sequence.
+
+**[Book the assessment](https://www.brainforge.ai/free-consultation-call)**
