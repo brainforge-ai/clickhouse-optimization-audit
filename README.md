@@ -146,6 +146,26 @@ clickhouse-audit-<service>-<YYYY-MM-DD>.json
 
 The HTML is one self-contained file: offline, light and dark themes, collapsible categories, a derived cost panel and print styles.
 
+## Releasing
+
+`main` is development. `release` is what the plugin directory tracks.
+
+1. Bump `version` in `.claude-plugin/plugin.json`.
+2. Run both checks:
+   ```bash
+   python3 skills/clickhouse-audit/scripts/validate.py
+   claude plugin validate . --strict
+   ```
+3. Open a pull request from `main` to `release` and merge it.
+4. Tag the merge commit and push the tag:
+   ```bash
+   git tag -a v<version> -m "v<version>"
+   git push origin v<version>
+   ```
+5. In the directory portal, publish the new version. With auto-publish enabled, a passing scan goes live on its own.
+
+Never commit directly to `release`; it is protected and only takes merges from `main`.
+
 ## Troubleshooting
 
 | Symptom | Fix |
