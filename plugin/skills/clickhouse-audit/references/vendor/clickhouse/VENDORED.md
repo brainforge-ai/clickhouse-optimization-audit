@@ -31,10 +31,6 @@ That guidance tells an agent to read database credentials from environment varia
 
 ## Update
 
-Run:
-
-```bash
-./scripts/update-vendor.sh <commit-sha>
-```
+Maintainers run `tools/update-vendor.sh <commit-sha>` from the root of the source repository. It is not part of the installed plugin.
 
 The script reapplies the modification above. Then review the diff, update this file's commit and date, and re-run the plugin validation.

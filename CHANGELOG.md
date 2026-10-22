@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 — 2026-10-22
+
+- Move the plugin into `plugin/`. Maintainer tools (`validate.py`, `update-vendor.sh`), CI and fixtures stay outside it, so they are no longer installed or scanned as part of the plugin. Directory plugin path is now `plugin`.
+- Split the README: `plugin/README.md` is the user guide; the root README covers the repository and releasing.
+
 ## 1.1.2 — 2026-10-22
 
 - Remove the vendored "agent connect" guidance that read database credentials from environment variables. The plugin authenticates only through ClickHouse Cloud OAuth via MCP. Clears the directory's credential policy holds.

@@ -13,4 +13,4 @@ jobs:
         with:
           python-version: "3.11"
       - name: Validate plugin, references, and sample report
-        run: python3 skills/clickhouse-audit/scripts/validate.py
+        run: python3 tools/validate.py
