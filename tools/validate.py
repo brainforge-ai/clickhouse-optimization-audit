@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-"""Offline validation for the plugin repository.
+"""Offline validation for the plugin repository (maintainer tool, not shipped in the plugin).
 
 Does not need the Claude CLI. Checks the manifest, marketplace, MCP config,
 referenced paths, skill frontmatter, HTML placeholder, and the sample render.
@@ -13,7 +12,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[1]
+PLUGIN = ROOT / "plugin"
 errors: list[str] = []
 warnings: list[str] = []
 
@@ -31,9 +31,9 @@ def load(path: Path) -> dict:
         return {}
 
 
-plugin = load(ROOT / ".claude-plugin" / "plugin.json")
+plugin = load(PLUGIN / ".claude-plugin" / "plugin.json")
 market = load(ROOT / ".claude-plugin" / "marketplace.json")
-mcp = load(ROOT / ".mcp.json")
+mcp = load(PLUGIN / ".mcp.json")
 example = load(ROOT / "examples" / "findings.example.json")
 
 name = plugin.get("name", "")
@@ -66,7 +66,7 @@ if "clickhouse" in servers:
     check(server.get("type") == "http", "ClickHouse MCP server type must be http")
     check(str(server.get("url", "")).startswith("https://"), "ClickHouse MCP server url must be https")
 
-SKILL = ROOT / "skills" / "clickhouse-audit"
+SKILL = PLUGIN / "skills" / "clickhouse-audit"
 skill = SKILL / "SKILL.md"
 check(skill.exists(), "skills/clickhouse-audit/SKILL.md is required")
 if skill.exists():
@@ -76,7 +76,12 @@ if skill.exists():
     for token in ("get_organizations", "run_select_query", "Never call", "No row data"):
         check(token in text, f"skill is missing guardrail or tool reference: {token}")
 
-check((ROOT / "commands" / "audit.md").exists(), "commands/audit.md is required")
+check((PLUGIN / "commands" / "audit.md").exists(), "plugin/commands/audit.md is required")
+check((PLUGIN / "README.md").exists(), "plugin/README.md is required for the directory listing")
+check((PLUGIN / "LICENSE").exists(), "plugin/LICENSE is required for the directory listing")
+icon = plugin.get("icon")
+check(not icon or (PLUGIN / icon).exists(), f"plugin icon not found: {icon}")
+check(not list(PLUGIN.rglob("validate.py")) and not list(PLUGIN.rglob("update-vendor.sh")), "maintainer tools must stay outside plugin/")
 
 html = (SKILL / "references" / "report-template.html").read_text(encoding="utf-8")
 check(html.count("__FINDINGS_JSON__") == 1, "HTML template needs exactly one __FINDINGS_JSON__ placeholder")

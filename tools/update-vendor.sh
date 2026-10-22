@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # Re-vendor ClickHouse agent skills at a pinned commit.
-# Usage: ./scripts/update-vendor.sh <commit-sha>
+# Maintainer tool, not shipped in the plugin.
+# Usage: ./tools/update-vendor.sh <commit-sha>
 
 SHA="${1:-}"
 if [[ -z "$SHA" ]]; then
@@ -12,7 +13,7 @@ if [[ -z "$SHA" ]]; then
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEST="$ROOT/references/vendor/clickhouse"
+DEST="$ROOT/plugin/skills/clickhouse-audit/references/vendor/clickhouse"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 

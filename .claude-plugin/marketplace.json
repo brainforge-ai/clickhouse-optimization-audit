@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "clickhouse-optimization-audit",
-      "source": "./",
+      "source": "./plugin",
       "description": "Read-only ClickHouse Cloud optimization audit across service health, data model and storage, ingestion and pipelines, query efficiency, and data lifecycle.",
       "defaultEnabled": true
     }
