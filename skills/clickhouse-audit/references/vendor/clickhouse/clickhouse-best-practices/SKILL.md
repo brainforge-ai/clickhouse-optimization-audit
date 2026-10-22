@@ -7,6 +7,9 @@ metadata:
   version: "0.4.0"
 ---
 
+<!-- Modified by Brainforge: removed the agent connection section (agent-connect-mcp), which reads database credentials from environment variables. This plugin authenticates only through ClickHouse Cloud OAuth via the remote MCP server. -->
+
+
 # ClickHouse Best Practices
 
 Comprehensive guidance for ClickHouse covering schema design, query optimization, data ingestion, and AI agent connectivity. Contains 31 rules across 4 main categories (schema, query, insert, agent), prioritized by impact.
@@ -31,13 +34,12 @@ Comprehensive guidance for ClickHouse covering schema design, query optimization
 
 Before querying ClickHouse, agents must establish a connection and follow the discovery workflow:
 
-1. `rules/agent-connect-mcp.md` - Connection setup (MCP + CLI), credential discovery, output format selection
-2. `rules/agent-discovery-schema.md` - **CRITICAL**: 7-step schema discovery workflow
-3. `rules/agent-query-safety.md` - **CRITICAL**: LIMIT, timeouts, progressive exploration
+1. `rules/agent-discovery-schema.md` - **CRITICAL**: 7-step schema discovery workflow
+2. `rules/agent-query-safety.md` - **CRITICAL**: LIMIT, timeouts, progressive exploration
 
 **Every agent session should follow this sequence:**
 
-1. **Connect** — establish connection via MCP or CLI (see `agent-connect-mcp`)
+1. **Connect** — use the ClickHouse Cloud remote MCP server
 2. **Discover** — databases → tables → columns + comments → sort keys → skip indexes → sample → EXPLAIN
 3. **Plan** — use sort key and skip index knowledge to write efficient WHERE clauses
 4. **Execute** — run queries with LIMIT and timeouts
@@ -227,10 +229,6 @@ Structure your response as follows:
 ### Agent Integration - Safety (CRITICAL)
 
 - `agent-query-safety` - LIMIT, timeouts, progressive exploration
-
-### Agent Integration - Connectivity + Formats (HIGH)
-
-- `agent-connect-mcp` - MCP + CLI setup, credential discovery, output format selection
 
 ---
 

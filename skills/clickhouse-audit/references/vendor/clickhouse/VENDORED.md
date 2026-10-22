@@ -16,7 +16,12 @@
 
 ## Changes
 
-None. Files are copied verbatim. The audit skill reads them as reference documents; they are not loaded as active skills.
+One local modification, required for the plugin directory's security policy:
+
+- Removed `clickhouse-best-practices/rules/agent-connect-mcp.md`.
+- Removed section 4.2 "Connect AI Agents to ClickHouse" from `clickhouse-best-practices/AGENTS.md`, and its references in `clickhouse-best-practices/SKILL.md`.
+
+That guidance tells an agent to read database credentials from environment variables and connect with `clickhouse-client`. This plugin never does that; it authenticates only through ClickHouse Cloud OAuth via the remote MCP server. Modified files carry a notice at the top. Everything else is copied verbatim. The audit skill reads these files as reference documents; they are not loaded as active skills.
 
 ## Why vendor instead of depend
 
@@ -32,4 +37,4 @@ Run:
 ./scripts/update-vendor.sh <commit-sha>
 ```
 
-Then review the diff, update this file's commit and date, and re-run the plugin validation.
+The script reapplies the modification above. Then review the diff, update this file's commit and date, and re-run the plugin validation.

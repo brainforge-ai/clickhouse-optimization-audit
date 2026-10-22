@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2 — 2026-10-22
+
+- Remove the vendored "agent connect" guidance that read database credentials from environment variables. The plugin authenticates only through ClickHouse Cloud OAuth via MCP. Clears the directory's credential policy holds.
+- Replace the PNG icon with an SVG of the Brainforge mark, so the directory can inspect it as text.
+
 ## 1.1.1 — 2026-10-21
 
 - Add directory listing metadata: icon, documentation, support, privacy policy and terms URLs.

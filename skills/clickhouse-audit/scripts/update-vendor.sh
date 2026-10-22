@@ -24,6 +24,35 @@ cp -R "$TMP/agent-skills/skills/clickhouse-best-practices" "$DEST/"
 cp -R "$TMP/agent-skills/skills/clickhouse-architecture-advisor" "$DEST/"
 cp "$TMP/agent-skills/LICENSE" "$TMP/agent-skills/NOTICE" "$DEST/"
 
+# Local modification: drop the agent connection guidance, which reads
+# credentials from environment variables. See VENDORED.md "Changes".
+python3 - "$DEST/clickhouse-best-practices" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+base = Path(sys.argv[1])
+note = ("<!-- Modified by Brainforge: removed the agent connection section (agent-connect-mcp), "
+        "which reads database credentials from environment variables. This plugin authenticates "
+        "only through ClickHouse Cloud OAuth via the remote MCP server. -->\n\n")
+
+(base / "rules" / "agent-connect-mcp.md").unlink(missing_ok=True)
+
+agents = base / "AGENTS.md"
+lines = agents.read_text().splitlines(keepends=True)
+start = next((i for i, l in enumerate(lines) if l.startswith("### ") and "Connect AI Agents to ClickHouse" in l), None)
+if start is not None:
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith(("### ", "## "))), len(lines))
+    lines = lines[:start] + lines[end:]
+lines = [l for l in lines if "Connect AI Agents to ClickHouse" not in l and "agent-connect-mcp" not in l]
+agents.write_text(note + "".join(lines))
+
+skill = base / "SKILL.md"
+text = skill.read_text()
+text = "\n".join(l for l in text.splitlines() if "agent-connect-mcp" not in l) + "\n"
+skill.write_text(text)
+PY
+
 python3 - "$DEST/VENDORED.md" "$SHA" <<'PY'
 import sys
 from datetime import date
