@@ -87,6 +87,15 @@ Cost is not a scored area. The report derives a cost panel from measured terms a
 
 The reasoning is grounded in ClickHouse's own guidance. The plugin vendors `clickhouse-best-practices` and `clickhouse-architecture-advisor` from [ClickHouse/agent-skills](https://github.com/ClickHouse/agent-skills) (Apache-2.0) at a pinned commit. See `skills/clickhouse-audit/references/vendor/clickhouse/VENDORED.md`.
 
+## Data handling
+
+- **What it reads.** Metadata and `system.*` tables from the ClickHouse Cloud service you select, through ClickHouse's managed remote MCP server. No row data from your tables.
+- **What leaves your machine.** Only the SQL queries sent to that ClickHouse service. No telemetry, no analytics, no third-party endpoint.
+- **What it writes.** Three files in the current directory: the HTML report, the Markdown report and `findings.json`. Nothing else.
+- **Browser open.** The audit asks the renderer to open the finished HTML in your default browser. It is skipped when no desktop session is available, and it never fetches anything.
+- **Credentials.** None are collected or stored by the plugin. Authentication is the ClickHouse OAuth flow handled by the MCP client.
+- **Local scripts.** `render_report.py` and `validate.py` run with your local Python. No package installs and no network calls.
+
 ## Read-only guarantee
 
 - Allowed tools: `get_organizations`, `get_services_list`, `get_service_details`, `list_databases`, `list_tables`, `run_select_query`.

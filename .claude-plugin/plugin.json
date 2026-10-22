@@ -1,7 +1,7 @@
 {
   "name": "clickhouse-optimization-audit",
   "displayName": "ClickHouse Optimization Audit",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Read-only ClickHouse Cloud optimization audit across service health, data model and storage, ingestion and pipelines, query efficiency, and data lifecycle. Cost is derived from findings.",
   "author": {
     "name": "Brainforge",
@@ -18,5 +18,10 @@
     "cost",
     "performance",
     "mcp"
-  ]
+  ],
+  "icon": "./icon.png",
+  "documentationUrl": "https://github.com/brainforge-ai/clickhouse-optimization-audit#readme",
+  "supportUrl": "https://github.com/brainforge-ai/clickhouse-optimization-audit/issues",
+  "privacyPolicyUrl": "https://www.brainforge.ai/privacy-policy",
+  "termsOfServiceUrl": "https://www.brainforge.ai/terms-and-conditions"
 }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 — 2026-10-21
+
+- Add directory listing metadata: icon, documentation, support, privacy policy and terms URLs.
+- Add a data handling section to the README for the directory's security review.
+
 ## 1.1.0 — 2026-10-21
 
 - New checks: stuck mutations, insert backpressure, query-level settings, shard topology, TTL that does not delete, storage tiering, MergeTree settings, query cache, aggregate correctness, Kafka consumer lag.
